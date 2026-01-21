@@ -1,0 +1,414 @@
+{
+  "project": "Penelope - Authentication & User Management",
+  "branchName": "ralph-moss/penelope-auth",
+  "description": "Implement Supabase authentication, user registration/login, persona persistence, user dashboard, free persona unlock flow, B2B buyer personas, and basic admin dashboard for the Penelope AI persona creation tool.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Set up Supabase client configuration",
+      "description": "As a developer, I need Supabase client configured so that auth and database features work throughout the app.",
+      "acceptanceCriteria": [
+        "Create src/lib/supabase/client.ts with browser client using createBrowserClient",
+        "Create src/lib/supabase/server.ts with server client using createServerClient",
+        "Create src/lib/supabase/middleware.ts with auth middleware helper",
+        "Update .env.example with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "Supabase packages already installed: @supabase/supabase-js, @supabase/ssr"
+    },
+    {
+      "id": "US-002",
+      "title": "Create database schema SQL for users and personas",
+      "description": "As a developer, I need database tables defined so that users and personas can be persisted.",
+      "acceptanceCriteria": [
+        "Create supabase/migrations/001_initial_schema.sql with users table (id, email, name, avatar_url, role, free_persona_used, created_at, updated_at)",
+        "Add personas table (id, user_id, type, business_context jsonb, persona_data jsonb, is_unlocked, created_at, updated_at)",
+        "Add company_profiles table for B2B (id, user_id, company_data jsonb, created_at, updated_at)",
+        "Add buyer_personas table linking to company_profiles (id, company_profile_id, persona_data jsonb, created_at)",
+        "Add Row Level Security policies: users can only access their own data",
+        "Add foreign key constraints and indexes",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "Schema should match existing types in src/types/index.ts"
+    },
+    {
+      "id": "US-003",
+      "title": "Create auth middleware for protected routes",
+      "description": "As a developer, I need middleware to protect routes so that only authenticated users can access certain pages.",
+      "acceptanceCriteria": [
+        "Create src/middleware.ts using Next.js middleware",
+        "Redirect unauthenticated users from /dashboard, /persona/*/unlock to /login",
+        "Redirect authenticated users from /login, /register to /dashboard",
+        "Allow public access to /, /create, /persona/[id] (preview mode)",
+        "Refresh auth session on each request",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Use Supabase SSR middleware pattern"
+    },
+    {
+      "id": "US-004",
+      "title": "Create registration page UI",
+      "description": "As a new user, I want to register an account so that I can save and unlock personas.",
+      "acceptanceCriteria": [
+        "Create src/app/(auth)/register/page.tsx with registration form",
+        "Form fields: email, password, confirm password, name (optional)",
+        "Client-side validation: email format, password min 8 chars, passwords match",
+        "Show loading state during submission",
+        "Display error messages from Supabase",
+        "Link to login page for existing users",
+        "Styled consistently with existing UI components",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "Use existing Button, Input, Card components from src/components/ui"
+    },
+    {
+      "id": "US-005",
+      "title": "Implement registration server action",
+      "description": "As a developer, I need a server action to handle registration so that users can create accounts securely.",
+      "acceptanceCriteria": [
+        "Create src/app/(auth)/register/actions.ts with registerUser server action",
+        "Validate input on server side",
+        "Call Supabase auth.signUp with email and password",
+        "Create user record in users table with free_persona_used=false",
+        "Return success or error response",
+        "Handle existing email error gracefully",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Create login page UI",
+      "description": "As a returning user, I want to log in so that I can access my saved personas.",
+      "acceptanceCriteria": [
+        "Create src/app/(auth)/login/page.tsx with login form",
+        "Form fields: email, password",
+        "Show loading state during submission",
+        "Display error messages (invalid credentials, etc.)",
+        "Link to registration page for new users",
+        "Link to forgot password (placeholder for now)",
+        "Styled consistently with existing UI components",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "Use existing Button, Input, Card components"
+    },
+    {
+      "id": "US-007",
+      "title": "Implement login server action",
+      "description": "As a developer, I need a server action to handle login so that users can authenticate securely.",
+      "acceptanceCriteria": [
+        "Create src/app/(auth)/login/actions.ts with loginUser server action",
+        "Call Supabase auth.signInWithPassword",
+        "Update user's updated_at timestamp on successful login",
+        "Return success with redirect URL or error response",
+        "Handle invalid credentials error gracefully",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Create auth context provider",
+      "description": "As a developer, I need auth state available throughout the app so that components can react to user authentication status.",
+      "acceptanceCriteria": [
+        "Create src/components/providers/auth-provider.tsx with AuthContext",
+        "Provide user, isLoading, isAuthenticated, signOut function",
+        "Subscribe to Supabase auth state changes",
+        "Wrap app in provider in src/app/layout.tsx",
+        "Export useAuth hook for consuming components",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Update header navigation with auth state",
+      "description": "As a user, I want to see my login status in the header so that I know if I'm authenticated.",
+      "acceptanceCriteria": [
+        "Create src/components/header.tsx component",
+        "Show Login/Register buttons when logged out",
+        "Show user email/name and Dashboard link when logged in",
+        "Add Sign Out button that calls signOut from auth context",
+        "Add header to layout.tsx",
+        "Mobile responsive with hamburger menu",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "Use Lucide icons for menu"
+    },
+    {
+      "id": "US-010",
+      "title": "Create user dashboard page",
+      "description": "As a logged-in user, I want a dashboard to see my saved personas so that I can access them easily.",
+      "acceptanceCriteria": [
+        "Create src/app/dashboard/page.tsx",
+        "Show welcome message with user's name or email",
+        "Display grid of user's saved personas as cards",
+        "Each card shows: persona name, type badge, created date, locked/unlocked status",
+        "Link each card to /persona/[id]",
+        "Show empty state with CTA to create first persona",
+        "Show free persona status (used/available)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Create dashboard data fetching",
+      "description": "As a developer, I need to fetch user's personas from database so that dashboard can display them.",
+      "acceptanceCriteria": [
+        "Create src/app/dashboard/actions.ts with getUserPersonas server action",
+        "Query personas table filtered by user_id",
+        "Include company_profiles for B2B personas",
+        "Order by created_at descending",
+        "Return typed PersonaListItem[] array",
+        "Handle errors gracefully",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Update persona generation to save to database",
+      "description": "As a developer, I need personas saved to database so that users can access them later.",
+      "acceptanceCriteria": [
+        "Update src/app/api/generate-persona/route.ts to save to Supabase",
+        "If user is authenticated, save persona to personas table with user_id",
+        "If user is not authenticated, still generate but don't persist (preview mode)",
+        "Set is_unlocked=false by default for authenticated users",
+        "Return persona_id from database instead of generated ID",
+        "Remove in-memory storage (personaStore)",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Maintain backwards compatibility with unauthenticated preview flow"
+    },
+    {
+      "id": "US-013",
+      "title": "Update persona page to fetch from database",
+      "description": "As a developer, I need persona page to load from database so that saved personas display correctly.",
+      "acceptanceCriteria": [
+        "Update src/app/persona/[id]/page.tsx to fetch from Supabase",
+        "Query personas table by id",
+        "Check if user owns the persona or if it's a preview",
+        "Pass is_unlocked status to determine visible sections",
+        "Handle not found case with 404 page",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Implement free persona unlock flow",
+      "description": "As a new user, I want to unlock one free persona so that I can see the full value before paying.",
+      "acceptanceCriteria": [
+        "Add 'Unlock Free' button on persona page when user is authenticated and free_persona_used=false",
+        "Create src/app/persona/[id]/actions.ts with unlockFreePersona server action",
+        "Server action updates persona is_unlocked=true and user free_persona_used=true",
+        "Only unlocks preview content (psychological_depth stays locked)",
+        "Show success message and refresh page",
+        "Hide button if free persona already used",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Free unlock = preview content only, not psychological depth"
+    },
+    {
+      "id": "US-015",
+      "title": "Add registration prompt on persona preview",
+      "description": "As an unauthenticated user viewing a persona preview, I want to be prompted to register so that I can save and unlock it.",
+      "acceptanceCriteria": [
+        "Add registration CTA banner on persona page for unauthenticated users",
+        "Banner explains: 'Register to save this persona and unlock one for free'",
+        "Include Register button linking to /register?redirect=/persona/[id]",
+        "Handle redirect query param in registration flow",
+        "After registration, redirect back to persona page",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Create B2B company profiles persistence",
+      "description": "As a B2B user, I want my company profiles saved so that I can create linked buyer personas.",
+      "acceptanceCriteria": [
+        "Update generation API to save B2B company profiles to company_profiles table",
+        "Include company_id in response for linking buyer personas",
+        "Add company profiles section to dashboard",
+        "Each company card shows: name, industry, size, number of linked buyer personas",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": "B2B company profiles already partially implemented in types"
+    },
+    {
+      "id": "US-017",
+      "title": "Create linked buyer personas for B2B",
+      "description": "As a B2B user, I want to create buyer personas linked to a company profile so that I can understand different stakeholders.",
+      "acceptanceCriteria": [
+        "Add 'Add Buyer Persona' button on company profile detail page",
+        "Create buyer persona wizard that pre-fills company context",
+        "Save buyer personas to buyer_personas table with company_profile_id",
+        "Display linked buyer personas on company profile page",
+        "Allow multiple buyer personas per company",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Create company profile detail page",
+      "description": "As a B2B user, I want to view a company profile with its linked buyer personas so that I can see the full picture.",
+      "acceptanceCriteria": [
+        "Create src/app/company/[id]/page.tsx",
+        "Display company profile data in expandable sections",
+        "List linked buyer personas as cards below company info",
+        "Each buyer persona card links to /persona/[id]",
+        "Add 'Create Buyer Persona' CTA button",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Create basic admin layout and middleware",
+      "description": "As an admin, I need a protected admin area so that I can manage users and personas.",
+      "acceptanceCriteria": [
+        "Create src/app/admin/layout.tsx with admin navigation sidebar",
+        "Update middleware to check user.role='admin' for /admin routes",
+        "Redirect non-admin users to /dashboard with error message",
+        "Admin sidebar links: Dashboard, Users, Personas, Company Profiles",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Create admin dashboard overview",
+      "description": "As an admin, I want a dashboard overview so that I can see key metrics at a glance.",
+      "acceptanceCriteria": [
+        "Create src/app/admin/page.tsx with stats cards",
+        "Display: total users, total personas, personas this week, B2B vs B2C breakdown",
+        "Create server action to fetch admin stats",
+        "Stats cards styled consistently with app design",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Create admin users list page",
+      "description": "As an admin, I want to view all users so that I can manage accounts.",
+      "acceptanceCriteria": [
+        "Create src/app/admin/users/page.tsx with users table",
+        "Display: email, name, role, free persona used, created date, persona count",
+        "Add pagination (20 per page)",
+        "Add search by email",
+        "Link each row to user detail (future enhancement)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-022",
+      "title": "Create admin personas list page",
+      "description": "As an admin, I want to view all personas so that I can monitor usage.",
+      "acceptanceCriteria": [
+        "Create src/app/admin/personas/page.tsx with personas table",
+        "Display: persona name, type, user email, business name, unlocked status, created date",
+        "Add pagination (20 per page)",
+        "Add filter by type (B2C/B2B)",
+        "Link persona name to /persona/[id]",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Add sign out functionality",
+      "description": "As a user, I want to sign out so that I can end my session securely.",
+      "acceptanceCriteria": [
+        "Create src/app/(auth)/signout/route.ts as route handler",
+        "Call Supabase auth.signOut()",
+        "Clear session cookies",
+        "Redirect to home page after sign out",
+        "Sign Out button in header calls this route",
+        "Typecheck passes"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Add loading and error states throughout",
+      "description": "As a user, I want clear loading and error feedback so that I know what's happening.",
+      "acceptanceCriteria": [
+        "Create src/components/ui/loading-spinner.tsx component",
+        "Create src/components/ui/error-message.tsx component",
+        "Add loading.tsx files for dashboard, admin routes",
+        "Add error.tsx files for dashboard, admin, persona routes",
+        "Show skeleton loaders during data fetching",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 24,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
