@@ -111,3 +111,144 @@ export async function getAdminStats(): Promise<ApiResponse<AdminStats>> {
     return { success: false, error: 'An unexpected error occurred' }
   }
 }
+
+// ============================================
+// ADMIN USERS LIST
+// ============================================
+
+export interface AdminUserListItem {
+  id: string
+  email: string
+  name: string | null
+  role: 'user' | 'admin'
+  free_persona_used: boolean
+  created_at: string
+  persona_count: number
+}
+
+export interface AdminUsersResponse {
+  users: AdminUserListItem[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+/**
+ * Fetch paginated list of all users for admin panel.
+ * Includes search by email and persona count per user.
+ *
+ * @param page - Current page (1-indexed)
+ * @param pageSize - Number of items per page (default 20)
+ * @param searchEmail - Optional email search filter
+ */
+export async function getAdminUsers(
+  page: number = 1,
+  pageSize: number = 20,
+  searchEmail?: string
+): Promise<ApiResponse<AdminUsersResponse>> {
+  try {
+    const supabase = createClient()
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    // Verify user is admin
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (userError || !userData || userData.role !== 'admin') {
+      return { success: false, error: 'Unauthorized: Admin access required' }
+    }
+
+    // Calculate pagination offset
+    const offset = (page - 1) * pageSize
+
+    // Build users query
+    let usersQuery = supabase
+      .from('users')
+      .select('id, email, name, role, free_persona_used, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + pageSize - 1)
+
+    // Add email search filter if provided
+    if (searchEmail && searchEmail.trim()) {
+      usersQuery = usersQuery.ilike('email', `%${searchEmail.trim()}%`)
+    }
+
+    const { data: users, error: usersError, count: totalCount } = await usersQuery
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError)
+      return { success: false, error: 'Failed to fetch users' }
+    }
+
+    if (!users) {
+      return {
+        success: true,
+        data: {
+          users: [],
+          totalCount: 0,
+          page,
+          pageSize,
+          totalPages: 0,
+        },
+      }
+    }
+
+    // Get persona counts for each user
+    const userIds = users.map(u => u.id)
+    const { data: personaCounts, error: countError } = await supabase
+      .from('personas')
+      .select('user_id')
+      .in('user_id', userIds)
+
+    if (countError) {
+      console.error('Error fetching persona counts:', countError)
+    }
+
+    // Build persona count map
+    const countMap = new Map<string, number>()
+    if (personaCounts) {
+      for (const p of personaCounts) {
+        if (p.user_id) {
+          countMap.set(p.user_id, (countMap.get(p.user_id) ?? 0) + 1)
+        }
+      }
+    }
+
+    // Build response with persona counts
+    const usersWithCounts: AdminUserListItem[] = users.map(u => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: u.role as 'user' | 'admin',
+      free_persona_used: u.free_persona_used,
+      created_at: u.created_at,
+      persona_count: countMap.get(u.id) ?? 0,
+    }))
+
+    const total = totalCount ?? 0
+    const totalPages = Math.ceil(total / pageSize)
+
+    return {
+      success: true,
+      data: {
+        users: usersWithCounts,
+        totalCount: total,
+        page,
+        pageSize,
+        totalPages,
+      },
+    }
+  } catch (err) {
+    console.error('Unexpected error in getAdminUsers:', err)
+    return { success: false, error: 'An unexpected error occurred' }
+  }
+}
