@@ -23,6 +23,8 @@ B2B buyer personas, and basic admin dashboard for Penelope.
 - Persona name is derived from persona_data.name or company_profile.name (not a DB column)
 - For b2b_buyer personas, company_id is a self-referencing FK to parent company persona
 - B2B company profiles saved in TWO places: personas.company_profile (for display) AND company_profiles table (for linking buyer_personas)
+- Middleware role check: user role fetched from public.users table (not auth.users) in middleware.ts
+- Admin routes protected via adminRoutes array in src/middleware.ts, non-admins redirected to /dashboard?error=admin_required
 
 ## Key Files
 - src/types/index.ts - User, Subscription, Persona types already defined
@@ -444,5 +446,199 @@ Session: penelope-app/.ralph-moss/prds/penelope-auth
 - Pre-filling context in wizards improves UX - company context helps generate relevant buyer personas
 - Role suggestions with quick-select buttons speed up user flow
 - formatBuyerPersonaContext function creates enriched prompt with company info for better AI output
+
+---
+
+## 2026-01-22 - US-018: Create company profile detail page
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Updated src/app/company/[id]/page.tsx to display company profile data in expandable sections
+- Added ExpandableSection component for collapsible content sections
+- Company profile now shows expandable sections for: Business Model, Company Culture, Challenges, Strategic Goals, Buying Process, Technology Stack
+- Company header card remains always visible with basic info (location, founded, size, industry)
+- Created src/app/company/[id]/buyer/[buyerId]/page.tsx - buyer persona detail page
+- Created src/app/company/[id]/buyer/[buyerId]/actions.ts - getBuyerPersona server action
+- Buyer persona detail page shows full persona info with expandable sections
+- Buyer persona cards now link to /company/[id]/buyer/[buyerId] detail page
+- Breadcrumb navigation: Dashboard > Company Name > Persona Name
+
+### Files changed
+- src/app/company/[id]/page.tsx (modified - added expandable sections)
+- src/app/company/[id]/buyer/[buyerId]/page.tsx (new)
+- src/app/company/[id]/buyer/[buyerId]/actions.ts (new)
+
+### Learnings for future iterations
+- Buyer personas are stored in buyer_personas table, separate from personas table
+- The acceptance criteria mentioned linking to /persona/[id] but buyer personas have their own detail page
+- ExpandableSection component pattern is reusable - same pattern used in persona page
+- Use Set<string> to track expanded sections state for multiple collapsible items
+
+---
+
+## 2026-01-22 - US-019: Create basic admin layout and middleware
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/admin/layout.tsx with admin navigation sidebar
+- Sidebar links: Dashboard, Users, Personas, Company Profiles
+- Updated src/lib/supabase/middleware.ts to fetch user role from public.users table
+- Added UserWithRole interface for role-aware auth checks
+- Updated src/middleware.ts to check for admin role on /admin routes
+- Non-admin users redirected to /dashboard?error=admin_required
+- Created placeholder admin page at src/app/admin/page.tsx (full implementation in US-020)
+- Admin sidebar uses Lucide icons: LayoutDashboard, Users, UserCircle, Building2, Shield
+
+### Files changed
+- src/lib/supabase/middleware.ts (modified - added UserWithRole interface and role fetch)
+- src/middleware.ts (modified - added admin route protection)
+- src/app/admin/layout.tsx (new)
+- src/app/admin/page.tsx (new)
+
+### Learnings for future iterations
+- Middleware needs to fetch user role from public.users since auth.users doesn't have role column
+- Use query params for error messages when redirecting (e.g., ?error=admin_required)
+- Admin layout uses flex with fixed sidebar (w-64) and flex-1 main content area
+- Sidebar pattern: dark bg-slate-900 with hover states on nav items
+- For exact route matching vs prefix matching, handle /admin differently from /admin/*
+
+---
+
+## 2026-01-22 - US-020: Create admin dashboard overview
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/admin/actions.ts with getAdminStats server action
+- Server action queries: total users, total personas, personas this week, B2C count, B2B count
+- Admin role verification before returning stats
+- Updated src/app/admin/page.tsx with stats cards UI
+- StatCard component with icon, title, value, optional subtitle
+- StatCardSkeleton for loading states
+- Stats grid showing: Total Users, Total Personas, Personas This Week, B2B vs B2C
+- Detailed breakdown section with persona type chart (progress bar)
+- Quick Stats section: Avg personas per user, Weekly growth rate, B2B adoption rate
+- Error state handling with red banner
+
+### Files changed
+- src/app/admin/actions.ts (new)
+- src/app/admin/page.tsx (modified - full implementation)
+
+### Learnings for future iterations
+- Use { count: 'exact', head: true } for Supabase count queries (no data returned, just count)
+- For date filtering in Supabase, use .gte('created_at', dateString) for "greater than or equal"
+- Admin server actions should verify role from public.users table before returning sensitive data
+- StatCard pattern: iconBgColor + iconColor props for consistent styling variation
+- Progress bar percentage calculation: (count / total) * 100 with Math.round for display
+
+---
+
+## 2026-01-22 - US-021: Create admin users list page
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/admin/users/page.tsx with users table
+- Table displays: email, name, role badge (Admin/User), free persona status badge, created date, persona count
+- Added getAdminUsers server action to src/app/admin/actions.ts with pagination and email search
+- Pagination component with previous/next navigation, shows "Showing X to Y of Z users"
+- Page size of 20 users per page
+- Search by email with case-insensitive partial matching (ilike)
+- RoleBadge component: purple for admin, gray for user with icons
+- BooleanBadge component: green "Used" or gray "Available" for free persona status
+- TableSkeleton component for loading state
+- Empty state when no users found or search has no results
+- Persona count shown in blue circular badge
+
+### Files changed
+- src/app/admin/actions.ts (modified - added getAdminUsers, AdminUserListItem, AdminUsersResponse)
+- src/app/admin/users/page.tsx (new)
+
+### Learnings for future iterations
+- Use Supabase .range(offset, offset + pageSize - 1) for pagination (0-indexed, inclusive)
+- Use .ilike('column', '%search%') for case-insensitive partial matching
+- Fetch persona counts separately and build Map<userId, count> for efficient lookup
+- Table skeleton pattern: use grid with animate-pulse for loading states
+- Pagination calculation: offset = (page - 1) * pageSize, totalPages = Math.ceil(total / pageSize)
+
+---
+
+## 2026-01-22 - US-022: Create admin personas list page
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/admin/personas/page.tsx with personas table
+- Added getAdminPersonas server action to src/app/admin/actions.ts
+- Table displays: persona name (linked to /persona/[id]), type badge, user email, business name, unlocked status, created date
+- Pagination with 20 items per page (same pattern as users page)
+- Filter by type: All, B2C, B2B (using FilterButton component)
+- TypeBadge component with distinct styling for b2c_individual (green), b2b_company (blue), b2b_buyer (purple)
+- UnlockedBadge component showing locked/unlocked status with appropriate icons
+- Server action fetches personas with type filter, joins user emails via separate query
+- Admin role verification before returning data
+
+### Files changed
+- src/app/admin/actions.ts (modified - added AdminPersonaListItem, AdminPersonasResponse, PersonaTypeFilter, getAdminPersonas)
+- src/app/admin/personas/page.tsx (new)
+
+### Learnings for future iterations
+- Persona name is derived from persona_data.name (for individuals) or company_profile.name (for companies), not a DB column
+- For filtering by multiple types, use .in('type', ['type1', 'type2']) with Supabase
+- FilterButton pattern: active state uses brand-blue bg with white text, inactive uses slate-100 bg
+- Admin pages follow consistent pattern: header, filter card, table card with pagination
+
+---
+
+## 2026-01-22 - US-023: Add sign out functionality
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/(auth)/signout/route.ts as a Next.js route handler
+- Route handler calls Supabase auth.signOut() which clears session cookies
+- Supports both POST and GET methods for flexibility
+- Redirects to home page after sign out using NextResponse.redirect
+- Updated src/components/header.tsx to use window.location.href = '/signout' instead of client-side signOut
+- Removed unused signOut from useAuth destructuring in header
+
+### Files changed
+- src/app/(auth)/signout/route.ts (new)
+- src/components/header.tsx (modified)
+
+### Learnings for future iterations
+- Route handlers in (auth) group work the same as API routes but with cleaner URL structure
+- Supabase server client's signOut() automatically clears session cookies via the setAll cookie handler
+- Using window.location.href for sign out provides a full page navigation that ensures clean state
+- Support both GET and POST on auth routes for flexibility (links vs forms)
+
+---
+
+## 2026-01-22 - US-024: Add loading and error states throughout
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/components/ui/loading-spinner.tsx with LoadingSpinner (sized sm/md/lg/xl) and PageLoading components
+- Created src/components/ui/error-message.tsx with ErrorMessage component (inline/default/page variants)
+- Added loading.tsx files for dashboard, admin, admin/users, admin/personas routes
+- Added error.tsx files for dashboard, admin, persona routes
+- Exported new components from src/components/ui/index.ts
+- All loading.tsx files use skeleton patterns matching their respective pages
+
+### Files changed
+- src/components/ui/loading-spinner.tsx (new)
+- src/components/ui/error-message.tsx (new)
+- src/components/ui/index.ts (modified)
+- src/app/dashboard/loading.tsx (new)
+- src/app/dashboard/error.tsx (new)
+- src/app/admin/loading.tsx (new)
+- src/app/admin/error.tsx (new)
+- src/app/admin/users/loading.tsx (new)
+- src/app/admin/personas/loading.tsx (new)
+- src/app/persona/[id]/error.tsx (new)
+
+### Learnings for future iterations
+- Next.js loading.tsx files provide automatic loading UI during route transitions
+- Next.js error.tsx files act as error boundaries for their route segment
+- Error.tsx must be client components ('use client') since they use useEffect and Button onClick handlers
+- Skeleton patterns should match the page layout closely for smooth visual transitions
+- The error prop in error.tsx has optional `digest` property for server error IDs
+- ErrorMessage component variants: inline (banner style), default (card style), page (full page)
 
 ---

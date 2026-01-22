@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Building2, Users, Sparkles } from 'lucide-react'
 import { Button, Input, Textarea, Select, Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui'
@@ -14,7 +14,7 @@ const PRICE_OPTIONS = [
   { value: 'lower', label: 'Lower than competitors' },
 ]
 
-export default function CreatePersonaPage() {
+function CreatePersonaWizard() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const initialType = searchParams.get('type') as 'b2c' | 'b2b' | null
@@ -407,5 +407,17 @@ export default function CreatePersonaPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function CreatePersonaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="animate-pulse text-slate-400">Loading...</div>
+      </div>
+    }>
+      <CreatePersonaWizard />
+    </Suspense>
   )
 }

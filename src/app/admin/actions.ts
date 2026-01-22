@@ -348,7 +348,7 @@ export async function getAdminPersonas(
     }
 
     // Get user emails for all personas
-    const userIds = [...new Set(personas.map(p => p.user_id).filter(Boolean))] as string[]
+    const userIds = Array.from(new Set(personas.map(p => p.user_id).filter(Boolean))) as string[]
     const userEmailMap = new Map<string, string>()
 
     if (userIds.length > 0) {

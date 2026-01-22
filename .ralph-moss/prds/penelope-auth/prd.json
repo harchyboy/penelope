@@ -308,8 +308,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 18,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Company profile page updated with expandable sections for all data (Business Model, Culture, Challenges, Goals, Buying Process, Technology). Buyer persona cards link to new detail page at /company/[id]/buyer/[buyerId] with full persona display."
     },
     {
       "id": "US-019",
@@ -324,8 +324,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 19,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Admin layout with sidebar created. Middleware fetches user role from public.users and redirects non-admin users to /dashboard?error=admin_required"
     },
     {
       "id": "US-020",
@@ -340,8 +340,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 20,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Admin dashboard with stats cards, type breakdown, and quick stats implemented. Server action fetches total users, personas, weekly growth, B2B/B2C counts."
     },
     {
       "id": "US-021",
@@ -357,8 +357,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 21,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Admin users page with table, pagination, email search, role badges, and persona counts implemented."
     },
     {
       "id": "US-022",
@@ -374,8 +374,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 22,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Admin personas page with table, pagination, type filter (All/B2C/B2B), TypeBadge and UnlockedBadge components, links to persona detail pages."
     },
     {
       "id": "US-023",
@@ -390,8 +390,8 @@
         "Typecheck passes"
       ],
       "priority": 23,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Route handler created at (auth)/signout/route.ts, header updated to call /signout route"
     },
     {
       "id": "US-024",
@@ -407,8 +407,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 24,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created LoadingSpinner, PageLoading, and ErrorMessage components. Added loading.tsx for dashboard, admin, admin/users, admin/personas. Added error.tsx for dashboard, admin, persona routes."
     }
   ]
 }
