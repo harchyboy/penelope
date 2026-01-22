@@ -252,3 +252,161 @@ export async function getAdminUsers(
     return { success: false, error: 'An unexpected error occurred' }
   }
 }
+
+// ============================================
+// ADMIN PERSONAS LIST
+// ============================================
+
+export interface AdminPersonaListItem {
+  id: string
+  name: string
+  type: 'b2c_individual' | 'b2b_company' | 'b2b_buyer'
+  user_email: string
+  business_name: string
+  is_unlocked: boolean
+  created_at: string
+}
+
+export interface AdminPersonasResponse {
+  personas: AdminPersonaListItem[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export type PersonaTypeFilter = 'all' | 'b2c' | 'b2b'
+
+/**
+ * Fetch paginated list of all personas for admin panel.
+ * Includes filter by type (B2C/B2B) and user email.
+ *
+ * @param page - Current page (1-indexed)
+ * @param pageSize - Number of items per page (default 20)
+ * @param typeFilter - Filter by persona type: 'all', 'b2c', or 'b2b'
+ */
+export async function getAdminPersonas(
+  page: number = 1,
+  pageSize: number = 20,
+  typeFilter: PersonaTypeFilter = 'all'
+): Promise<ApiResponse<AdminPersonasResponse>> {
+  try {
+    const supabase = createClient()
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    // Verify user is admin
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (userError || !userData || userData.role !== 'admin') {
+      return { success: false, error: 'Unauthorized: Admin access required' }
+    }
+
+    // Calculate pagination offset
+    const offset = (page - 1) * pageSize
+
+    // Build personas query
+    let personasQuery = supabase
+      .from('personas')
+      .select('id, type, user_id, business_context, persona_data, company_profile, is_unlocked, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + pageSize - 1)
+
+    // Apply type filter
+    if (typeFilter === 'b2c') {
+      personasQuery = personasQuery.eq('type', 'b2c_individual')
+    } else if (typeFilter === 'b2b') {
+      personasQuery = personasQuery.in('type', ['b2b_company', 'b2b_buyer'])
+    }
+
+    const { data: personas, error: personasError, count: totalCount } = await personasQuery
+
+    if (personasError) {
+      console.error('Error fetching personas:', personasError)
+      return { success: false, error: 'Failed to fetch personas' }
+    }
+
+    if (!personas) {
+      return {
+        success: true,
+        data: {
+          personas: [],
+          totalCount: 0,
+          page,
+          pageSize,
+          totalPages: 0,
+        },
+      }
+    }
+
+    // Get user emails for all personas
+    const userIds = [...new Set(personas.map(p => p.user_id).filter(Boolean))] as string[]
+    const userEmailMap = new Map<string, string>()
+
+    if (userIds.length > 0) {
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email')
+        .in('id', userIds)
+
+      if (usersError) {
+        console.error('Error fetching user emails:', usersError)
+      } else if (users) {
+        for (const u of users) {
+          userEmailMap.set(u.id, u.email)
+        }
+      }
+    }
+
+    // Build response with persona details
+    const personasWithDetails: AdminPersonaListItem[] = personas.map(p => {
+      // Derive persona name from persona_data.name or company_profile.name
+      let name = 'Unnamed Persona'
+      if (p.persona_data && typeof p.persona_data === 'object' && 'name' in p.persona_data) {
+        name = (p.persona_data as { name: string }).name
+      } else if (p.company_profile && typeof p.company_profile === 'object' && 'name' in p.company_profile) {
+        name = (p.company_profile as { name: string }).name
+      }
+
+      // Derive business name from business_context
+      const businessName = p.business_context && typeof p.business_context === 'object' && 'business_name' in p.business_context
+        ? (p.business_context as { business_name: string }).business_name
+        : '—'
+
+      return {
+        id: p.id,
+        name,
+        type: p.type as 'b2c_individual' | 'b2b_company' | 'b2b_buyer',
+        user_email: p.user_id ? (userEmailMap.get(p.user_id) ?? '—') : '—',
+        business_name: businessName,
+        is_unlocked: p.is_unlocked,
+        created_at: p.created_at,
+      }
+    })
+
+    const total = totalCount ?? 0
+    const totalPages = Math.ceil(total / pageSize)
+
+    return {
+      success: true,
+      data: {
+        personas: personasWithDetails,
+        totalCount: total,
+        page,
+        pageSize,
+        totalPages,
+      },
+    }
+  } catch (err) {
+    console.error('Unexpected error in getAdminPersonas:', err)
+    return { success: false, error: 'An unexpected error occurred' }
+  }
+}
