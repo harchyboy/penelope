@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter, notFound } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -13,14 +13,15 @@ import {
   Heart,
   Brain,
   ShoppingCart,
-  Users,
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Building2
+  Building2,
+  CheckCircle2
 } from 'lucide-react'
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { useAuth } from '@/components/providers/auth-provider'
+import { unlockFreePersona } from './actions'
 import type { Persona, PersonaData, CompanyProfile } from '@/types'
 
 interface PersonaApiResponse {
@@ -33,7 +34,7 @@ interface PersonaApiResponse {
 export default function PersonaPage() {
   const params = useParams()
   const router = useRouter()
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, refreshUser } = useAuth()
   const [persona, setPersona] = useState<Persona | null>(null)
   const [isOwner, setIsOwner] = useState(false)
   const [isPreview, setIsPreview] = useState(true)
@@ -42,6 +43,9 @@ export default function PersonaPage() {
   const [is404, setIs404] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic']))
+  const [unlockLoading, setUnlockLoading] = useState(false)
+  const [unlockError, setUnlockError] = useState<string | null>(null)
+  const [unlockSuccess, setUnlockSuccess] = useState(false)
 
   useEffect(() => {
     async function fetchPersona() {
@@ -84,6 +88,34 @@ export default function PersonaPage() {
       }
       return next
     })
+  }
+
+  const handleFreeUnlock = async () => {
+    if (!params.id || typeof params.id !== 'string') return
+
+    setUnlockLoading(true)
+    setUnlockError(null)
+    setUnlockSuccess(false)
+
+    try {
+      const result = await unlockFreePersona(params.id)
+
+      if (result.success) {
+        setUnlockSuccess(true)
+        // Refresh user data to update free_persona_used status
+        await refreshUser()
+        // Update local persona state to reflect unlock
+        if (persona) {
+          setPersona({ ...persona, is_unlocked: true })
+        }
+      } else {
+        setUnlockError(result.error || 'Failed to unlock persona')
+      }
+    } catch (err) {
+      setUnlockError('An unexpected error occurred. Please try again.')
+    } finally {
+      setUnlockLoading(false)
+    }
   }
 
   if (loading || authLoading) {
@@ -193,8 +225,25 @@ export default function PersonaPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Success Message after unlocking */}
+        {unlockSuccess && (
+          <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <p className="text-green-800">
+              Your persona has been unlocked! You now have access to the full preview content.
+            </p>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {unlockError && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-red-800">{unlockError}</p>
+          </div>
+        )}
+
         {/* Unlock Banner - Shows different CTAs based on auth state */}
-        {!isUnlocked && (
+        {!isUnlocked && !unlockSuccess && (
           <div className="mb-8 p-6 bg-gradient-to-r from-brand-blue to-brand-blue/80 rounded-xl text-white">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
@@ -220,12 +269,15 @@ export default function PersonaPage() {
                   </Button>
                 </Link>
               ) : isOwner && !user?.free_persona_used ? (
-                <Link href={`/persona/${params.id}/unlock`}>
-                  <Button variant="accent">
-                    <Unlock className="mr-2 h-4 w-4" />
-                    Use Free Unlock
-                  </Button>
-                </Link>
+                <Button
+                  variant="accent"
+                  onClick={handleFreeUnlock}
+                  isLoading={unlockLoading}
+                  disabled={unlockLoading}
+                >
+                  <Unlock className="mr-2 h-4 w-4" />
+                  {unlockLoading ? 'Unlocking...' : 'Use Free Unlock'}
+                </Button>
               ) : (
                 <Button variant="accent" disabled>
                   <Lock className="mr-2 h-4 w-4" />
