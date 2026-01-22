@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/components/providers/auth-provider'
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
-import { ArrowLeft, Building2, Users, Plus, ChevronRight, Briefcase, Target, Clock, Loader2 } from 'lucide-react'
+import { ArrowLeft, Building2, Users, Plus, ChevronRight, ChevronDown, ChevronUp, Briefcase, Target, Clock, Loader2, AlertTriangle, Cpu } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { getCompanyProfile, type CompanyProfileWithBuyerPersonas, type BuyerPersonaListItem } from './actions'
 
@@ -20,12 +20,12 @@ function LoadingSkeleton() {
   )
 }
 
-// Buyer persona card
-function BuyerPersonaCard({ buyerPersona }: { buyerPersona: BuyerPersonaListItem }) {
+// Buyer persona card - links to buyer persona detail page
+function BuyerPersonaCard({ buyerPersona, companyId }: { buyerPersona: BuyerPersonaListItem; companyId: string }) {
   const personaData = buyerPersona.persona_data
 
   return (
-    <Link href={`/company/${buyerPersona.company_profile_id}/buyer/${buyerPersona.id}`}>
+    <Link href={`/company/${companyId}/buyer/${buyerPersona.id}`}>
       <Card hover className="h-full">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
@@ -57,84 +57,279 @@ function BuyerPersonaCard({ buyerPersona }: { buyerPersona: BuyerPersonaListItem
   )
 }
 
-// Company overview section
-function CompanyOverview({ companyProfile }: { companyProfile: CompanyProfileWithBuyerPersonas }) {
+// Expandable section component
+function ExpandableSection({
+  id,
+  title,
+  icon: Icon,
+  expanded,
+  onToggle,
+  children
+}: {
+  id: string
+  title: string
+  icon: React.ElementType
+  expanded: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <Card className="overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+            <Icon className="h-5 w-5 text-orange-600" />
+          </div>
+          <span className="font-semibold text-slate-900">{title}</span>
+        </div>
+        {expanded ? (
+          <ChevronUp className="h-5 w-5 text-slate-400" />
+        ) : (
+          <ChevronDown className="h-5 w-5 text-slate-400" />
+        )}
+      </button>
+
+      {expanded && (
+        <CardContent className="pt-0 border-t border-slate-100">
+          {children}
+        </CardContent>
+      )}
+    </Card>
+  )
+}
+
+// Company overview with expandable sections
+function CompanyOverview({
+  companyProfile,
+  expandedSections,
+  toggleSection
+}: {
+  companyProfile: CompanyProfileWithBuyerPersonas
+  expandedSections: Set<string>
+  toggleSection: (section: string) => void
+}) {
   const company = companyProfile.company_data
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
-            <Building2 className="h-6 w-6 text-orange-600" />
+    <div className="space-y-4">
+      {/* Company Header Card - Always visible */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center">
+              <Building2 className="h-6 w-6 text-orange-600" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">{company.name}</CardTitle>
+              <CardDescription>{company.industry} • {company.size}</CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-xl">{company.name}</CardTitle>
-            <CardDescription>{company.industry} • {company.size}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-slate-500">Location</p>
+              <p className="font-medium text-slate-900">{company.location}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Founded</p>
+              <p className="font-medium text-slate-900">{company.founded}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Size</p>
+              <p className="font-medium text-slate-900">{company.size}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Industry</p>
+              <p className="font-medium text-slate-900">{company.industry}</p>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Basic Info */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <p className="text-sm text-slate-500">Location</p>
-            <p className="font-medium text-slate-900">{company.location}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500">Founded</p>
-            <p className="font-medium text-slate-900">{company.founded}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500">Size</p>
-            <p className="font-medium text-slate-900">{company.size}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500">Industry</p>
-            <p className="font-medium text-slate-900">{company.industry}</p>
-          </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Business Model */}
-        <div>
-          <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
-            <Briefcase className="h-4 w-4 text-slate-400" />
-            Business Model
-          </h4>
-          <p className="text-slate-600">{company.business_model}</p>
-        </div>
+      {/* Business Model - Expandable */}
+      <ExpandableSection
+        id="business_model"
+        title="Business Model"
+        icon={Briefcase}
+        expanded={expandedSections.has('business_model')}
+        onToggle={() => toggleSection('business_model')}
+      >
+        <p className="text-slate-600">{company.business_model}</p>
+      </ExpandableSection>
 
-        {/* Buying Process */}
-        <div>
-          <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-slate-400" />
-            Buying Process
-          </h4>
-          <div className="space-y-2 text-sm">
-            <p><span className="text-slate-500">Cycle Length:</span> {company.buying_process.typical_cycle_length}</p>
-            <p><span className="text-slate-500">Stakeholders:</span> {company.buying_process.stakeholders_involved.join(', ')}</p>
+      {/* Company Culture - Expandable */}
+      <ExpandableSection
+        id="culture"
+        title="Company Culture"
+        icon={Users}
+        expanded={expandedSections.has('culture')}
+        onToggle={() => toggleSection('culture')}
+      >
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Core Values</h4>
+            <div className="flex flex-wrap gap-2">
+              {company.company_culture.values.map((value, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 bg-orange-50 text-orange-700 rounded-full text-sm"
+                >
+                  {value}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Work Environment</h4>
+            <p className="text-slate-600">{company.company_culture.work_environment}</p>
+          </div>
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Decision Making Style</h4>
+            <p className="text-slate-600">{company.company_culture.decision_making_style}</p>
           </div>
         </div>
+      </ExpandableSection>
 
-        {/* Goals */}
-        <div>
-          <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
-            <Target className="h-4 w-4 text-slate-400" />
-            Strategic Priorities
-          </h4>
-          <div className="flex flex-wrap gap-2">
-            {company.goals.strategic_priorities.map((priority, idx) => (
-              <span
-                key={idx}
-                className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-sm"
-              >
-                {priority}
-              </span>
-            ))}
+      {/* Challenges - Expandable */}
+      <ExpandableSection
+        id="challenges"
+        title="Challenges"
+        icon={AlertTriangle}
+        expanded={expandedSections.has('challenges')}
+        onToggle={() => toggleSection('challenges')}
+      >
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Internal Challenges</h4>
+            <ul className="list-disc list-inside text-slate-600 space-y-1">
+              {company.challenges.internal.map((challenge, idx) => (
+                <li key={idx}>{challenge}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">External Challenges</h4>
+            <ul className="list-disc list-inside text-slate-600 space-y-1">
+              {company.challenges.external.map((challenge, idx) => (
+                <li key={idx}>{challenge}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Market Pressures</h4>
+            <ul className="list-disc list-inside text-slate-600 space-y-1">
+              {company.challenges.market_pressures.map((pressure, idx) => (
+                <li key={idx}>{pressure}</li>
+              ))}
+            </ul>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </ExpandableSection>
+
+      {/* Goals - Expandable */}
+      <ExpandableSection
+        id="goals"
+        title="Strategic Goals"
+        icon={Target}
+        expanded={expandedSections.has('goals')}
+        onToggle={() => toggleSection('goals')}
+      >
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Short-term Goals</h4>
+            <ul className="list-disc list-inside text-slate-600 space-y-1">
+              {company.goals.short_term.map((goal, idx) => (
+                <li key={idx}>{goal}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Long-term Goals</h4>
+            <ul className="list-disc list-inside text-slate-600 space-y-1">
+              {company.goals.long_term.map((goal, idx) => (
+                <li key={idx}>{goal}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Strategic Priorities</h4>
+            <div className="flex flex-wrap gap-2">
+              {company.goals.strategic_priorities.map((priority, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm"
+                >
+                  {priority}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </ExpandableSection>
+
+      {/* Buying Process - Expandable */}
+      <ExpandableSection
+        id="buying_process"
+        title="Buying Process"
+        icon={Clock}
+        expanded={expandedSections.has('buying_process')}
+        onToggle={() => toggleSection('buying_process')}
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-slate-500">Typical Cycle Length</p>
+              <p className="font-medium text-slate-900">{company.buying_process.typical_cycle_length}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Budget Authority</p>
+              <p className="font-medium text-slate-900">{company.buying_process.budget_authority}</p>
+            </div>
+          </div>
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Stakeholders Involved</h4>
+            <div className="flex flex-wrap gap-2">
+              {company.buying_process.stakeholders_involved.map((stakeholder, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                >
+                  {stakeholder}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="font-medium text-slate-700 mb-2">Procurement Process</h4>
+            <p className="text-slate-600">{company.buying_process.procurement_process}</p>
+          </div>
+        </div>
+      </ExpandableSection>
+
+      {/* Technology Stack - Expandable */}
+      <ExpandableSection
+        id="technology"
+        title="Technology Stack"
+        icon={Cpu}
+        expanded={expandedSections.has('technology')}
+        onToggle={() => toggleSection('technology')}
+      >
+        <div className="flex flex-wrap gap-2">
+          {company.technology_stack.map((tech, idx) => (
+            <span
+              key={idx}
+              className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm"
+            >
+              {tech}
+            </span>
+          ))}
+        </div>
+      </ExpandableSection>
+    </div>
   )
 }
 
@@ -147,6 +342,19 @@ export default function CompanyProfilePage() {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfileWithBuyerPersonas | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['business_model']))
+
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev)
+      if (next.has(section)) {
+        next.delete(section)
+      } else {
+        next.add(section)
+      }
+      return next
+    })
+  }
 
   useEffect(() => {
     async function loadCompanyProfile() {
@@ -237,8 +445,12 @@ export default function CompanyProfilePage() {
             </Link>
           </div>
 
-          {/* Company overview */}
-          <CompanyOverview companyProfile={companyProfile} />
+          {/* Company overview - expandable sections */}
+          <CompanyOverview
+            companyProfile={companyProfile}
+            expandedSections={expandedSections}
+            toggleSection={toggleSection}
+          />
 
           {/* Buyer Personas section */}
           <div className="space-y-4">
@@ -274,7 +486,7 @@ export default function CompanyProfilePage() {
             ) : (
               <div className="grid md:grid-cols-2 gap-6">
                 {companyProfile.buyer_personas.map((buyerPersona) => (
-                  <BuyerPersonaCard key={buyerPersona.id} buyerPersona={buyerPersona} />
+                  <BuyerPersonaCard key={buyerPersona.id} buyerPersona={buyerPersona} companyId={companyId} />
                 ))}
               </div>
             )}
