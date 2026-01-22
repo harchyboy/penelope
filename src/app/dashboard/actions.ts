@@ -1,16 +1,23 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import type { Persona, ApiResponse } from '@/types'
+import type { Persona, ApiResponse, CompanyProfile } from '@/types'
 
 export interface PersonaListItem extends Persona {
-  // Additional fields for list display can be added here
+  // For b2b_buyer personas, includes the linked company profile data
+  linked_company_profile?: CompanyProfile | null
 }
 
-// Fetch user's personas - to be fully implemented in US-011
+/**
+ * Fetch user's personas for dashboard display.
+ * - Queries personas table filtered by user_id
+ * - Orders by created_at descending (newest first)
+ * - For B2B buyer personas, includes linked company profile data
+ * - Returns typed PersonaListItem[] array
+ */
 export async function getUserPersonas(): Promise<ApiResponse<PersonaListItem[]>> {
   try {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -18,8 +25,8 @@ export async function getUserPersonas(): Promise<ApiResponse<PersonaListItem[]>>
       return { success: false, error: 'Not authenticated' }
     }
 
-    // Query personas for this user
-    const { data, error } = await supabase
+    // Query all personas for this user, ordered by creation date descending
+    const { data: personas, error } = await supabase
       .from('personas')
       .select('*')
       .eq('user_id', user.id)
@@ -30,17 +37,58 @@ export async function getUserPersonas(): Promise<ApiResponse<PersonaListItem[]>>
       return { success: false, error: 'Failed to fetch personas' }
     }
 
-    return { success: true, data: data as PersonaListItem[] }
+    if (!personas || personas.length === 0) {
+      return { success: true, data: [] }
+    }
+
+    // For b2b_buyer personas, fetch linked company profile data
+    // Collect company_ids from b2b_buyer personas
+    const companyIds = personas
+      .filter((p) => p.type === 'b2b_buyer' && p.company_id)
+      .map((p) => p.company_id as string)
+
+    let companyMap: Map<string, CompanyProfile | null> = new Map()
+
+    if (companyIds.length > 0) {
+      // Fetch the company personas to get their company_profile data
+      const { data: companies, error: companyError } = await supabase
+        .from('personas')
+        .select('id, company_profile')
+        .in('id', companyIds)
+
+      if (companyError) {
+        console.error('Error fetching company profiles:', companyError)
+        // Don't fail entirely, just log and continue without linked profiles
+      } else if (companies) {
+        companies.forEach((c) => {
+          companyMap.set(c.id, c.company_profile as CompanyProfile | null)
+        })
+      }
+    }
+
+    // Map personas to PersonaListItem, adding linked company profile for b2b_buyer
+    const personaListItems: PersonaListItem[] = personas.map((persona) => ({
+      ...persona,
+      linked_company_profile:
+        persona.type === 'b2b_buyer' && persona.company_id
+          ? companyMap.get(persona.company_id) || null
+          : undefined,
+    })) as PersonaListItem[]
+
+    return { success: true, data: personaListItems }
   } catch (err) {
     console.error('Unexpected error in getUserPersonas:', err)
     return { success: false, error: 'An unexpected error occurred' }
   }
 }
 
-// Get free persona status
+/**
+ * Fetch user's free persona status.
+ * Returns whether the user has used their free persona unlock.
+ */
 export async function getUserFreePersonaStatus(): Promise<ApiResponse<{ free_persona_used: boolean }>> {
   try {
-    const supabase = await createClient()
+    const supabase = createClient()
 
     // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser()

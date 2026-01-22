@@ -176,7 +176,6 @@ export interface Persona {
   user_id: string | null
   type: PersonaType
   company_id: string | null  // For b2b_buyer, links to parent company
-  name: string
   business_context: BusinessContext
   persona_data: PersonaData | null
   company_profile: CompanyProfile | null  // For b2b_company type
