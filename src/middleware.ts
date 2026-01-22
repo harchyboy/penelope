@@ -4,6 +4,9 @@ import { updateSession } from '@/lib/supabase/middleware'
 // Routes that require authentication
 const protectedRoutes = ['/dashboard', '/admin']
 
+// Routes that require admin role
+const adminRoutes = ['/admin']
+
 // Routes that should redirect to dashboard if already authenticated
 const authRoutes = ['/login', '/register']
 
@@ -19,6 +22,9 @@ export async function middleware(request: NextRequest) {
     protectedRoutes.some((route) => pathname.startsWith(route)) ||
     protectedPatterns.some((pattern) => pattern.test(pathname))
 
+  // Check if route requires admin role
+  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route))
+
   // Check if route is an auth route (login/register)
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
 
@@ -27,6 +33,13 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  // Redirect non-admin users away from admin routes
+  if (isAdminRoute && user && user.role !== 'admin') {
+    const dashboardUrl = new URL('/dashboard', request.url)
+    dashboardUrl.searchParams.set('error', 'admin_required')
+    return NextResponse.redirect(dashboardUrl)
   }
 
   // Redirect authenticated users away from auth routes
