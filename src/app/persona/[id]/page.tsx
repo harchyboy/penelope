@@ -254,7 +254,7 @@ export default function PersonaPage() {
                   <h3 className="font-semibold text-lg">Preview Mode</h3>
                   <p className="text-white/80">
                     {!isAuthenticated
-                      ? 'Register for free to save and unlock your first persona'
+                      ? 'Register to save this persona and unlock one for free'
                       : isOwner && !user?.free_persona_used
                         ? 'Use your free unlock to see the full persona'
                         : 'Upgrade to unlock the full persona insights'}
