@@ -6,33 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-blue to-brand-orange flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
-            </div>
-            <span className="font-semibold text-xl text-slate-900">Penelope</span>
-            <span className="text-xs text-slate-500 ml-1">by Hartz AI</span>
-          </div>
-          <nav className="flex items-center gap-4">
-            <Link href="/pricing" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
-              Pricing
-            </Link>
-            <Link href="/login">
-              <Button variant="ghost" size="sm">Sign In</Button>
-            </Link>
-            <Link href="/create">
-              <Button size="sm">
-                Create Persona
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
