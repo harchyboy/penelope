@@ -11,12 +11,13 @@ import { cn } from '@/lib/utils'
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
-  const { user, isLoading, isAuthenticated, signOut } = useAuth()
+  const { user, isLoading, isAuthenticated } = useAuth()
 
   const handleSignOut = async () => {
     try {
-      await signOut()
       setMobileMenuOpen(false)
+      // Call the server-side signout route handler
+      window.location.href = '/signout'
     } catch (error) {
       console.error('Error signing out:', error)
     }
