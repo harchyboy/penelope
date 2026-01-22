@@ -78,6 +78,30 @@ export async function POST(request: NextRequest) {
 
     // If authenticated, save to Supabase
     if (isAuthenticated) {
+      // For b2b_company type, also save to company_profiles table
+      let companyProfileId: string | null = null
+
+      if (type === 'b2b_company') {
+        const { data: savedCompanyProfile, error: companyProfileError } = await supabase
+          .from('company_profiles')
+          .insert({
+            user_id: user.id,
+            company_data: personaData, // CompanyProfile data
+          })
+          .select('id')
+          .single()
+
+        if (companyProfileError) {
+          console.error('Failed to save company profile to database:', companyProfileError)
+          return NextResponse.json(
+            { error: 'Failed to save company profile' },
+            { status: 500 }
+          )
+        }
+
+        companyProfileId = savedCompanyProfile.id
+      }
+
       const { data: savedPersona, error: insertError } = await supabase
         .from('personas')
         .insert({
@@ -106,6 +130,7 @@ export async function POST(request: NextRequest) {
         persona_id: savedPersona.id,
         persona_data: personaData,
         is_preview: false, // Authenticated users get their persona saved
+        company_profile_id: companyProfileId, // Include for linking buyer personas
       })
     }
 

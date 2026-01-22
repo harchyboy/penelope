@@ -8,7 +8,7 @@ import { Plus, Users, Building2, Lock, Unlock, Sparkles, ArrowRight } from 'luci
 import { formatDate } from '@/lib/utils'
 import type { Persona, PersonaType } from '@/types'
 import { useEffect, useState } from 'react'
-import { getUserPersonas, getUserFreePersonaStatus } from './actions'
+import { getUserPersonas, getUserFreePersonaStatus, getUserCompanyProfiles, type CompanyProfileListItem } from './actions'
 
 // Type badge component
 function TypeBadge({ type }: { type: PersonaType }) {
@@ -80,6 +80,49 @@ function PersonaCard({ persona }: { persona: Persona }) {
               ) : (
                 <span className="text-slate-500">Locked</span>
               )}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  )
+}
+
+// Company profile card component
+function CompanyProfileCard({ companyProfile }: { companyProfile: CompanyProfileListItem }) {
+  const companyData = companyProfile.company_data
+
+  return (
+    <Link href={`/company/${companyProfile.id}`}>
+      <Card hover className="h-full">
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-lg line-clamp-1">{companyData.name}</CardTitle>
+            <Building2 className="h-4 w-4 text-orange-500 flex-shrink-0" />
+          </div>
+          <CardDescription className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+              <Building2 className="h-3 w-3" />
+              Company Profile
+            </span>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm text-slate-500">
+            <p className="line-clamp-1">
+              <span className="font-medium text-slate-700">Industry:</span> {companyData.industry}
+            </p>
+            <p className="line-clamp-1">
+              <span className="font-medium text-slate-700">Size:</span> {companyData.size}
+            </p>
+            <p className="flex items-center gap-1">
+              <span className="font-medium text-slate-700">Buyer Personas:</span>
+              <span className={companyProfile.buyer_persona_count > 0 ? 'text-purple-600' : 'text-slate-500'}>
+                {companyProfile.buyer_persona_count}
+              </span>
+            </p>
+            <p>
+              <span className="font-medium text-slate-700">Created:</span> {formatDate(companyProfile.created_at)}
             </p>
           </div>
         </CardContent>
@@ -170,6 +213,7 @@ function LoadingSkeleton() {
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth()
   const [personas, setPersonas] = useState<Persona[]>([])
+  const [companyProfiles, setCompanyProfiles] = useState<CompanyProfileListItem[]>([])
   const [freePersonaUsed, setFreePersonaUsed] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -183,9 +227,10 @@ export default function DashboardPage() {
       }
 
       try {
-        const [personasResult, statusResult] = await Promise.all([
+        const [personasResult, statusResult, companyProfilesResult] = await Promise.all([
           getUserPersonas(),
           getUserFreePersonaStatus(),
+          getUserCompanyProfiles(),
         ])
 
         if (!personasResult.success) {
@@ -196,6 +241,10 @@ export default function DashboardPage() {
 
         if (statusResult.success) {
           setFreePersonaUsed(statusResult.data?.free_persona_used ?? false)
+        }
+
+        if (companyProfilesResult.success) {
+          setCompanyProfiles(companyProfilesResult.data || [])
         }
       } catch (err) {
         console.error('Error loading dashboard:', err)
@@ -265,6 +314,24 @@ export default function DashboardPage() {
 
           {/* Free persona status */}
           <FreePersonaStatus used={freePersonaUsed} />
+
+          {/* Company Profiles section - only show if user has any */}
+          {companyProfiles.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-slate-900">
+                Company Profiles
+                <span className="ml-2 text-sm font-normal text-slate-500">
+                  ({companyProfiles.length} {companyProfiles.length === 1 ? 'profile' : 'profiles'})
+                </span>
+              </h2>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {companyProfiles.map((companyProfile) => (
+                  <CompanyProfileCard key={companyProfile.id} companyProfile={companyProfile} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Personas section */}
           <div className="space-y-4">
