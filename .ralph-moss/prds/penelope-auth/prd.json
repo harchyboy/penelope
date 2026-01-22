@@ -241,8 +241,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": "Free unlock = preview content only, not psychological depth"
+      "passes": true,
+      "notes": "Free unlock = preview content only, not psychological depth. Server action created with full validation and rollback on failure."
     },
     {
       "id": "US-015",
@@ -258,8 +258,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Registration CTA banner with redirect handling was already implemented. Updated banner text to match acceptance criteria."
     },
     {
       "id": "US-016",
@@ -274,8 +274,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 16,
-      "passes": false,
-      "notes": "B2B company profiles already partially implemented in types"
+      "passes": true,
+      "notes": "Generation API saves to company_profiles table with company_profile_id in response. Dashboard shows company profiles with CompanyProfileCard component."
     },
     {
       "id": "US-017",
@@ -291,8 +291,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 17,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Company profile page created with buyer persona listing. Buyer persona wizard with company context pre-fill. API saves to buyer_personas table."
     },
     {
       "id": "US-018",

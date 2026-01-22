@@ -22,6 +22,7 @@ B2B buyer personas, and basic admin dashboard for Penelope.
 - AuthProvider in src/components/providers/auth-provider.tsx provides useAuth hook for auth state
 - Persona name is derived from persona_data.name or company_profile.name (not a DB column)
 - For b2b_buyer personas, company_id is a self-referencing FK to parent company persona
+- B2B company profiles saved in TWO places: personas.company_profile (for display) AND company_profiles table (for linking buyer_personas)
 
 ## Key Files
 - src/types/index.ts - User, Subscription, Persona types already defined
@@ -346,5 +347,102 @@ Session: penelope-app/.ralph-moss/prds/penelope-auth
 - For client components, handle 404 with state rather than notFound() to avoid server-side rendering issues
 - Use authLoading state to prevent flash of wrong content during auth initialization
 - Pass redirect param to registration page for post-auth navigation: `/register?redirect=/persona/${id}`
+
+---
+
+## 2026-01-22 - US-014: Implement free persona unlock flow
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/persona/[id]/actions.ts with unlockFreePersona server action
+- Server action validates: user authenticated, persona exists, user owns persona, free unlock not yet used
+- Updates persona.is_unlocked=true and user.free_persona_used=true in single transaction with rollback on failure
+- Updated persona page to add inline "Use Free Unlock" button (replaces Link to separate unlock page)
+- Added unlockLoading, unlockError, unlockSuccess state for UX feedback
+- Success message displayed after unlock, local state updated without full page refresh
+- Button hidden when user has already used free unlock
+
+### Files changed
+- src/app/persona/[id]/actions.ts (new)
+- src/app/persona/[id]/page.tsx (modified)
+
+### Learnings for future iterations
+- Server actions can import from @/lib/supabase/server directly for auth checks
+- Use refreshUser() from useAuth hook to update client-side user state after server mutations
+- For two-step database updates, implement rollback if second update fails
+- The isUnlocked flag in frontend unlocks preview content; psychological_depth remains locked even when is_unlocked=true (handled by isSectionLocked function)
+- CheckCircle2 icon from lucide-react is good for success feedback
+
+---
+
+## 2026-01-22 - US-015: Add registration prompt on persona preview
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Updated banner text on persona page to exactly match acceptance criteria: "Register to save this persona and unlock one for free"
+- Registration CTA banner, redirect query param handling, and post-registration redirect were already implemented in previous stories (US-013, US-014)
+- Registration flow: User clicks "Register to Unlock" → redirected to /register?redirect=/persona/[id] → after registration redirects back to persona page
+
+### Files changed
+- src/app/persona/[id]/page.tsx (modified - banner text only)
+
+### Learnings for future iterations
+- Before implementing a story, thoroughly check what's already been implemented in previous iterations
+- The registration redirect flow was built incrementally: US-004 created register page with redirect param handling, US-013 added register link with redirect param to persona page
+- A seemingly incomplete feature may already be implemented across multiple previous stories
+
+---
+
+## 2026-01-22 - US-016: Create B2B company profiles persistence
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Updated src/app/api/generate-persona/route.ts to save B2B company profiles to company_profiles table
+- Added company_profile_id in API response for linking buyer personas
+- Added CompanyProfileListItem type and getUserCompanyProfiles server action in src/app/dashboard/actions.ts
+- Server action counts linked buyer personas for each company profile
+- Added CompanyProfileCard component to dashboard showing: name, industry, size, buyer persona count
+- Added Company Profiles section to dashboard (only displays if user has company profiles)
+
+### Files changed
+- src/app/api/generate-persona/route.ts (modified - save to company_profiles table)
+- src/app/dashboard/actions.ts (modified - added CompanyProfileListItem type and getUserCompanyProfiles action)
+- src/app/dashboard/page.tsx (modified - added CompanyProfileCard and Company Profiles section)
+
+### Learnings for future iterations
+- B2B company profiles are saved in TWO places: personas.company_profile (JSONB) AND company_profiles table
+- The company_profiles table enables independent querying and linking buyer_personas
+- buyer_personas table links via company_profile_id (not via personas.company_id which is for self-referencing)
+- Use Map<string, number> to efficiently count related records when building list items
+
+---
+
+## 2026-01-22 - US-017: Create linked buyer personas for B2B
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/company/[id]/page.tsx - company profile detail page with buyer personas display
+- Created src/app/company/[id]/actions.ts - server actions for getCompanyProfile, createBuyerPersona, getCompanyContext
+- Created src/app/company/[id]/buyer/create/page.tsx - buyer persona creation wizard with pre-filled company context
+- Created src/app/api/generate-buyer-persona/route.ts - API endpoint to generate buyer personas via Claude and save to buyer_personas table
+- Company profile page displays linked buyer personas as cards with name, role, age, created date
+- "Add Buyer Persona" button on company profile page links to wizard
+- Wizard shows company context (read-only) and allows specifying buyer role, description, challenges
+- Quick role suggestions for common B2B buyer types (C-Suite, VP/Director, Manager, etc.)
+- Generated buyer personas saved to buyer_personas table with company_profile_id FK
+- Multiple buyer personas allowed per company
+
+### Files changed
+- src/app/company/[id]/page.tsx (new)
+- src/app/company/[id]/actions.ts (new)
+- src/app/company/[id]/buyer/create/page.tsx (new)
+- src/app/api/generate-buyer-persona/route.ts (new)
+
+### Learnings for future iterations
+- buyer_personas table links to company_profiles via company_profile_id (not to personas table)
+- The persona_data in buyer_personas follows same PersonaData interface as individual personas
+- Pre-filling context in wizards improves UX - company context helps generate relevant buyer personas
+- Role suggestions with quick-select buttons speed up user flow
+- formatBuyerPersonaContext function creates enriched prompt with company info for better AI output
 
 ---
