@@ -1,25 +1,34 @@
 import Link from 'next/link'
-import { ArrowRight, Users, Building2, MessageCircle, FileText, Sparkles, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, Users, Building2, MessageCircle, FileText, Sparkles, Check } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
 
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-blue to-brand-orange flex items-center justify-center">
-              <span className="text-white font-bold text-lg">P</span>
-            </div>
-            <span className="font-semibold text-xl text-slate-900">Penelope</span>
-            <span className="text-xs text-slate-500 ml-1">by Hartz AI</span>
-          </div>
-          <nav className="flex items-center gap-4">
-            <Link href="/pricing" className="text-sm text-slate-600 hover:text-slate-900 transition-colors">
+      {/* Glass Navigation */}
+      <header className="glass-nav fixed top-0 left-0 right-0 z-50">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3">
+            <span className="text-xl font-bold tracking-tight text-hartz-black">PENELOPE</span>
+            <span className="text-body-sm text-hartz-muted">by Hartz AI</span>
+          </Link>
+
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="#features" className="text-body-sm text-hartz-muted hover:text-hartz-black transition-colors">
+              Features
+            </Link>
+            <Link href="#how-it-works" className="text-body-sm text-hartz-muted hover:text-hartz-black transition-colors">
+              How It Works
+            </Link>
+            <Link href="/pricing" className="text-body-sm text-hartz-muted hover:text-hartz-black transition-colors">
               Pricing
             </Link>
+          </nav>
+
+          {/* CTA */}
+          <div className="flex items-center gap-4">
             <Link href="/login">
               <Button variant="ghost" size="sm">Sign In</Button>
             </Link>
@@ -29,30 +38,34 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-          </nav>
+          </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-6">
-            <div className="inline-flex items-center gap-2 bg-brand-blue/10 text-brand-blue px-4 py-2 rounded-full text-sm font-medium">
-              <Sparkles className="h-4 w-4" />
-              AI-Powered Customer Personas
+      <section className="pt-32 pb-24 px-6">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center space-y-8">
+            {/* Meta Label */}
+            <div className="inline-block">
+              <span className="meta-label">AI-POWERED PERSONA CREATION</span>
             </div>
-            
-            <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight">
-              Know Your Audience,<br />
-              <span className="gradient-text">Upgrade Your Outputs</span>
+
+            {/* Headline */}
+            <h1 className="text-display-xl md:text-[5.5rem] font-extrabold text-hartz-black leading-[0.9] tracking-[-0.05em]">
+              Know Your
+              <br />
+              <span className="text-gradient">Audience</span>
             </h1>
-            
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Meet Penelope, your AI expert in customer persona creation. 
-              Dive deep into your audience&apos;s needs and motivations to craft 
-              detailed personas that sharpen your marketing strategies.
+
+            {/* Subheadline */}
+            <p className="text-subheading text-hartz-muted max-w-2xl mx-auto font-normal leading-relaxed">
+              Meet Penelope, your AI expert in customer persona creation.
+              Dive deep into your audience&apos;s psychology to craft detailed personas
+              that sharpen your marketing strategies.
             </p>
-            
+
+            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link href="/create">
                 <Button size="xl">
@@ -66,146 +79,159 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
-            
-            <p className="text-sm text-slate-500">
-              No credit card required • First persona is free
+
+            {/* Trust Line */}
+            <p className="text-body-sm text-hartz-muted">
+              No credit card required
             </p>
           </div>
         </div>
       </section>
 
-      {/* Persona Types Section */}
-      <section className="py-16 px-4 bg-white">
+      {/* Technical Hairline */}
+      <div className="hairline" />
+
+      {/* Persona Types - Bento Grid */}
+      <section className="py-24 px-6" id="features">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
-              Create Personas for Any Business
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <span className="meta-label">PERSONA TYPES</span>
+            <h2 className="text-display mt-4 text-hartz-black">
+              Built for Any Business
             </h2>
-            <p className="text-lg text-slate-600">
-              Whether B2C or B2B, Penelope helps you understand who you&apos;re really talking to
-            </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card hover className="p-2">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-brand-blue" />
+
+          {/* Bento Cards */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* B2C Card */}
+            <div className="bento-card group">
+              <div className="flex items-start justify-between mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-hartz-blue/10 flex items-center justify-center">
+                  <Users className="h-7 w-7 text-hartz-blue" />
                 </div>
-                <CardTitle>B2C Buyer Personas</CardTitle>
-                <CardDescription>
-                  Create detailed individual customer profiles
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {[
-                    'Demographics & psychographics',
-                    'Emotional & cultural drivers',
-                    'Pain points & motivations',
-                    'Buying journey mapping',
-                    'MBTI & Enneagram analysis',
-                    'Deep psychological insights'
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-slate-600">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/create?type=b2c" className="mt-6 block">
-                  <Button className="w-full">
-                    Create B2C Persona
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-            
-            <Card hover className="p-2">
-              <CardHeader>
-                <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center mb-4">
-                  <Building2 className="h-6 w-6 text-brand-orange" />
+                <span className="meta-label text-hartz-blue">B2C</span>
+              </div>
+
+              <h3 className="text-heading text-hartz-black mb-3">
+                Individual Personas
+              </h3>
+              <p className="text-body text-hartz-muted mb-8">
+                Create detailed consumer profiles with psychological depth,
+                emotional drivers, and buying journey insights.
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  'Demographics & psychographics',
+                  'MBTI & Enneagram analysis',
+                  'Pain points & motivations',
+                  'Deep psychological insights'
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-body-sm text-hartz-muted">
+                    <Check className="h-4 w-4 text-hartz-blue flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <Link href="/create?type=b2c">
+                <Button className="w-full">
+                  Create B2C Persona
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+
+            {/* B2B Card */}
+            <div className="bento-card group">
+              <div className="flex items-start justify-between mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-hartz-black/5 flex items-center justify-center">
+                  <Building2 className="h-7 w-7 text-hartz-black" />
                 </div>
-                <CardTitle>B2B Company & Buyer Profiles</CardTitle>
-                <CardDescription>
-                  Create company profiles with linked decision-makers
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {[
-                    'Ideal company profile (ICP)',
-                    'Company culture & challenges',
-                    'Buying process & stakeholders',
-                    'Multiple buyer personas per company',
-                    'Decision-maker analysis',
-                    'Strategic priorities & goals'
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-slate-600">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/create?type=b2b" className="mt-6 block">
-                  <Button variant="accent" className="w-full">
-                    Create B2B Profile
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+                <span className="meta-label">B2B</span>
+              </div>
+
+              <h3 className="text-heading text-hartz-black mb-3">
+                Company Profiles
+              </h3>
+              <p className="text-body text-hartz-muted mb-8">
+                Build ideal company profiles with linked decision-maker
+                personas and buying process insights.
+              </p>
+
+              <ul className="space-y-3 mb-8">
+                {[
+                  'Ideal company profile (ICP)',
+                  'Multiple buyer personas',
+                  'Decision-maker analysis',
+                  'Buying process mapping'
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-body-sm text-hartz-muted">
+                    <Check className="h-4 w-4 text-hartz-black flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <Link href="/create?type=b2b">
+                <Button variant="outline" className="w-full">
+                  Create B2B Profile
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-16 px-4">
+      {/* Technical Hairline */}
+      <div className="hairline" />
+
+      {/* How It Works */}
+      <section id="how-it-works" className="py-24 px-6">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <span className="meta-label">PROCESS</span>
+            <h2 className="text-display mt-4 text-hartz-black">
               How Penelope Works
             </h2>
-            <p className="text-lg text-slate-600">
-              Three simple steps to deeply understand your customers
-            </p>
           </div>
-          
+
+          {/* Steps */}
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
                 step: '01',
-                title: 'Tell Us About Your Business',
-                description: 'Share your business name, sector, pricing, target location, and what makes you unique.',
+                title: 'Share Your Context',
+                description: 'Tell us about your business, target market, and what makes you unique.',
                 icon: FileText,
               },
               {
                 step: '02',
-                title: 'Penelope Creates Your Persona',
-                description: 'Using advanced AI and consumer psychology, Penelope crafts a detailed, multi-dimensional persona.',
+                title: 'AI Analysis',
+                description: 'Penelope applies consumer psychology and neuromarketing principles.',
                 icon: Sparkles,
               },
               {
                 step: '03',
-                title: 'Chat & Refine',
-                description: 'Ask Penelope questions, dive deeper into insights, and refine your understanding.',
+                title: 'Refine & Explore',
+                description: 'Chat with Penelope to dive deeper into any aspect of your persona.',
                 icon: MessageCircle,
               },
             ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="relative inline-block mb-6">
-                  <div className="w-16 h-16 rounded-full bg-brand-blue/10 flex items-center justify-center">
-                    <item.icon className="h-8 w-8 text-brand-blue" />
-                  </div>
-                  <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-brand-orange text-white text-sm font-bold flex items-center justify-center">
-                    {item.step}
-                  </span>
+              <div key={item.step} className="bento-card text-center">
+                <span className="text-display-lg text-hartz-blue/20 font-extrabold">
+                  {item.step}
+                </span>
+                <div className="w-14 h-14 rounded-2xl bg-hartz-blue/10 flex items-center justify-center mx-auto mt-4 mb-6">
+                  <item.icon className="h-7 w-7 text-hartz-blue" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                <h3 className="text-subheading text-hartz-black mb-3">
                   {item.title}
                 </h3>
-                <p className="text-slate-600">
+                <p className="text-body-sm text-hartz-muted">
                   {item.description}
                 </p>
               </div>
@@ -214,69 +240,73 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 px-4 bg-white">
+      {/* Technical Hairline */}
+      <div className="hairline" />
+
+      {/* Features Grid */}
+      <section className="py-24 px-6">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <span className="meta-label">CAPABILITIES</span>
+            <h2 className="text-display mt-4 text-hartz-black">
               What Makes Penelope Different
             </h2>
-            <p className="text-lg text-slate-600">
-              Powered by neuromarketing, consumer psychology, and advanced AI
-            </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {/* Features Bento Grid */}
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 title: 'Psychological Depth',
                 description: 'Goes beyond demographics to uncover fears, desires, and hidden contradictions.',
               },
               {
-                title: 'MBTI & Enneagram Analysis',
-                description: 'Understand personality types and how they influence buying behavior.',
+                title: 'Personality Analysis',
+                description: 'MBTI & Enneagram typing to understand how personality influences buying.',
               },
               {
                 title: 'Actionable Insights',
                 description: 'Every insight is designed to be immediately useful for marketing and sales.',
               },
               {
-                title: 'Chat with Penelope',
-                description: 'Ask follow-up questions and dive deeper into any aspect of your persona.',
+                title: 'Chat Interface',
+                description: 'Ask follow-up questions and explore any aspect of your persona in depth.',
               },
               {
-                title: 'Professional PDF Export',
-                description: 'Download beautiful, shareable PDF reports for your team or clients.',
+                title: 'PDF Export',
+                description: 'Download beautiful, shareable reports for your team or clients.',
               },
               {
-                title: 'B2B & B2C Support',
+                title: 'B2B & B2C',
                 description: 'Create individual personas or complete company profiles with buyer maps.',
               },
             ].map((feature) => (
-              <Card key={feature.title} className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              <div key={feature.title} className="bento-card">
+                <h4 className="text-subheading text-hartz-black mb-2">
                   {feature.title}
-                </h3>
-                <p className="text-slate-600">
+                </h4>
+                <p className="text-body-sm text-hartz-muted">
                   {feature.description}
                 </p>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-br from-brand-blue to-brand-blue/80">
+      <section className="py-24 px-6 bg-hartz-black">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            Ready to Truly Understand Your Customers?
+          <span className="meta-label text-hartz-blue">GET STARTED</span>
+          <h2 className="text-display mt-4 text-white mb-6">
+            Ready to Understand Your Customers?
           </h2>
-          <p className="text-xl text-white/80 mb-8">
+          <p className="text-subheading text-white/60 mb-10 font-normal">
             Create your first persona for free. No credit card required.
           </p>
           <Link href="/create">
-            <Button size="xl" variant="accent">
+            <Button size="xl">
               Get Started Now
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -285,29 +315,31 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 bg-slate-900">
+      <footer className="py-12 px-6 border-t border-hartz-border">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-blue to-brand-orange flex items-center justify-center">
-                <span className="text-white font-bold text-sm">P</span>
-              </div>
-              <span className="font-semibold text-white">Penelope</span>
-              <span className="text-xs text-slate-400 ml-1">by Hartz AI</span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-bold tracking-tight text-hartz-black">PENELOPE</span>
+              <span className="text-body-sm text-hartz-muted">by Hartz AI</span>
             </div>
-            <div className="flex items-center gap-6 text-sm text-slate-400">
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacy Policy
+
+            {/* Links */}
+            <div className="flex items-center gap-8 text-body-sm text-hartz-muted">
+              <Link href="/privacy" className="hover:text-hartz-black transition-colors">
+                Privacy
               </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Terms of Service
+              <Link href="/terms" className="hover:text-hartz-black transition-colors">
+                Terms
               </Link>
-              <a href="https://hartzai.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+              <a href="https://hartzai.com" target="_blank" rel="noopener noreferrer" className="hover:text-hartz-black transition-colors">
                 Hartz AI
               </a>
             </div>
-            <p className="text-sm text-slate-400">
-              © {new Date().getFullYear()} Hartz AI. All rights reserved.
+
+            {/* Copyright */}
+            <p className="text-body-sm text-hartz-muted">
+              {new Date().getFullYear()} Hartz AI
             </p>
           </div>
         </div>

@@ -3,21 +3,22 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  ArrowLeft, 
-  Download, 
-  MessageCircle, 
-  Lock, 
+import {
+  ArrowLeft,
+  Download,
+  MessageCircle,
+  Lock,
   Unlock,
   User,
   Heart,
   Brain,
   ShoppingCart,
-  Users,
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Building2
+  Building2,
+  X,
+  Send
 } from 'lucide-react'
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import type { Persona, PersonaData, CompanyProfile } from '@/types'
@@ -36,11 +37,11 @@ export default function PersonaPage() {
       try {
         const response = await fetch(`/api/generate-persona?id=${params.id}`)
         const data = await response.json()
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch persona')
         }
-        
+
         setPersona(data.persona)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -70,10 +71,10 @@ export default function PersonaPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-blue to-brand-orange flex items-center justify-center mx-auto animate-pulse">
-            <Sparkles className="h-8 w-8 text-white" />
+          <div className="w-16 h-16 rounded-full bg-hartz-blue/10 flex items-center justify-center mx-auto animate-pulse">
+            <Sparkles className="h-8 w-8 text-hartz-blue" />
           </div>
-          <p className="text-slate-600">Loading persona...</p>
+          <p className="text-body text-hartz-muted">Loading persona...</p>
         </div>
       </div>
     )
@@ -82,8 +83,8 @@ export default function PersonaPage() {
   if (error || !persona) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-red-600">{error || 'Persona not found'}</p>
+        <div className="text-center space-y-6">
+          <p className="text-body text-red-500">{error || 'Persona not found'}</p>
           <Link href="/create">
             <Button>Create a New Persona</Button>
           </Link>
@@ -96,7 +97,6 @@ export default function PersonaPage() {
   const data = isB2B ? persona.company_profile : persona.persona_data
   const isUnlocked = persona.is_unlocked
 
-  // Sections that are visible in preview vs full
   const previewSections = ['basic', 'motivations_and_values']
 
   const isSectionLocked = (section: string) => {
@@ -105,121 +105,124 @@ export default function PersonaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button 
+    <div className="min-h-screen">
+      {/* Glass Header */}
+      <header className="glass-nav fixed top-0 left-0 right-0 z-50">
+        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+          <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-2 text-hartz-muted hover:text-hartz-black transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Home
+            <span className="text-body-sm">Back</span>
           </button>
-          
+
+          <span className="text-lg font-bold tracking-tight text-hartz-black">PENELOPE</span>
+
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => setShowChat(!showChat)}
             >
               <MessageCircle className="mr-2 h-4 w-4" />
-              Chat with Penelope
+              Chat
             </Button>
             <Button size="sm" disabled={!isUnlocked}>
               <Download className="mr-2 h-4 w-4" />
-              Download PDF
+              PDF
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Unlock Banner */}
-        {!isUnlocked && (
-          <div className="mb-8 p-6 bg-gradient-to-r from-brand-blue to-brand-blue/80 rounded-xl text-white">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                  <Lock className="h-6 w-6" />
+      {/* Main Content */}
+      <main className="pt-24 pb-16 px-6">
+        <div className="container mx-auto max-w-4xl">
+          {/* Unlock Banner */}
+          {!isUnlocked && (
+            <div className="mb-8 bento-card bg-hartz-black text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
+                    <Lock className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-subheading font-semibold">Preview Mode</h3>
+                    <p className="text-body-sm text-white/60">Register free to unlock full persona</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Preview Mode</h3>
-                  <p className="text-white/80">Register for free to unlock your first full persona</p>
-                </div>
+                <Link href="/register">
+                  <Button>
+                    <Unlock className="mr-2 h-4 w-4" />
+                    Unlock Full Persona
+                  </Button>
+                </Link>
               </div>
-              <Link href="/register">
-                <Button variant="accent">
-                  <Unlock className="mr-2 h-4 w-4" />
-                  Unlock Full Persona
-                </Button>
-              </Link>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Persona Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
-              isB2B ? 'bg-orange-100' : 'bg-blue-100'
-            }`}>
-              {isB2B ? (
-                <Building2 className={`h-10 w-10 ${isB2B ? 'text-brand-orange' : 'text-brand-blue'}`} />
-              ) : (
-                <User className="h-10 w-10 text-brand-blue" />
-              )}
-            </div>
-            <div>
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-2 ${
-                isB2B ? 'bg-orange-100 text-brand-orange' : 'bg-blue-100 text-brand-blue'
+          {/* Persona Header */}
+          <div className="mb-8">
+            <div className="flex items-start gap-6">
+              <div className={`w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                isB2B ? 'bg-hartz-black/5' : 'bg-hartz-blue/10'
               }`}>
-                {isB2B ? 'B2B Company Profile' : 'B2C Buyer Persona'}
-              </span>
-              <h1 className="text-3xl font-bold text-slate-900">
-                {(data as any)?.name || 'Unnamed Persona'}
-              </h1>
-              <p className="text-slate-600">
-                Created for {persona.business_context.business_name}
-              </p>
+                {isB2B ? (
+                  <Building2 className="h-10 w-10 text-hartz-black" />
+                ) : (
+                  <User className="h-10 w-10 text-hartz-blue" />
+                )}
+              </div>
+              <div>
+                <span className={`meta-label ${isB2B ? '' : 'text-hartz-blue'}`}>
+                  {isB2B ? 'B2B COMPANY PROFILE' : 'B2C BUYER PERSONA'}
+                </span>
+                <h1 className="text-display text-hartz-black mt-2">
+                  {(data as any)?.name || 'Unnamed Persona'}
+                </h1>
+                <p className="text-body text-hartz-muted mt-2">
+                  Created for {persona.business_context.business_name}
+                </p>
+              </div>
             </div>
           </div>
+
+          {/* Persona Content */}
+          {!isB2B && persona.persona_data && (
+            <PersonaContent
+              data={persona.persona_data}
+              isUnlocked={isUnlocked}
+              expandedSections={expandedSections}
+              toggleSection={toggleSection}
+              isSectionLocked={isSectionLocked}
+            />
+          )}
+
+          {isB2B && persona.company_profile && (
+            <CompanyContent
+              data={persona.company_profile}
+              isUnlocked={isUnlocked}
+              expandedSections={expandedSections}
+              toggleSection={toggleSection}
+              isSectionLocked={isSectionLocked}
+            />
+          )}
+
+          {/* Create Another CTA */}
+          <div className="mt-12 text-center">
+            <Link href="/create">
+              <Button variant="outline" size="lg">
+                Create Another Persona
+              </Button>
+            </Link>
+          </div>
         </div>
-
-        {/* Persona Content */}
-        {!isB2B && persona.persona_data && (
-          <PersonaContent 
-            data={persona.persona_data} 
-            isUnlocked={isUnlocked}
-            expandedSections={expandedSections}
-            toggleSection={toggleSection}
-            isSectionLocked={isSectionLocked}
-          />
-        )}
-
-        {isB2B && persona.company_profile && (
-          <CompanyContent 
-            data={persona.company_profile} 
-            isUnlocked={isUnlocked}
-            expandedSections={expandedSections}
-            toggleSection={toggleSection}
-            isSectionLocked={isSectionLocked}
-          />
-        )}
-
-        {/* Create Another CTA */}
-        <div className="mt-12 text-center">
-          <Link href="/create">
-            <Button variant="outline" size="lg">
-              Create Another Persona
-            </Button>
-          </Link>
-        </div>
-      </div>
+      </main>
 
       {/* Chat Sidebar */}
       {showChat && (
-        <div className="fixed right-0 top-0 h-full w-96 bg-white border-l border-slate-200 shadow-xl z-50">
+        <div className="fixed right-0 top-0 h-full w-96 bg-hartz-white border-l border-hartz-border shadow-glass z-50">
           <ChatSidebar onClose={() => setShowChat(false)} personaData={persona.persona_data} />
         </div>
       )}
@@ -228,13 +231,13 @@ export default function PersonaPage() {
 }
 
 // Persona Content Component for B2C
-function PersonaContent({ 
-  data, 
-  isUnlocked, 
-  expandedSections, 
-  toggleSection, 
-  isSectionLocked 
-}: { 
+function PersonaContent({
+  data,
+  isUnlocked,
+  expandedSections,
+  toggleSection,
+  isSectionLocked
+}: {
   data: PersonaData
   isUnlocked: boolean
   expandedSections: Set<string>
@@ -247,14 +250,14 @@ function PersonaContent({
       title: 'Basic Information',
       icon: User,
       content: (
-        <div className="grid grid-cols-2 gap-4">
-          <InfoItem label="Age" value={data.age} />
-          <InfoItem label="Gender" value={data.gender} />
-          <InfoItem label="Location" value={data.location} />
-          <InfoItem label="Occupation" value={data.occupation} />
-          <InfoItem label="Income Level" value={data.income_level} />
-          <InfoItem label="Education" value={data.education} />
-          <InfoItem label="Marital Status" value={data.marital_status} />
+        <div className="grid grid-cols-2 gap-6">
+          <InfoItem label="AGE" value={data.age} />
+          <InfoItem label="GENDER" value={data.gender} />
+          <InfoItem label="LOCATION" value={data.location} />
+          <InfoItem label="OCCUPATION" value={data.occupation} />
+          <InfoItem label="INCOME" value={data.income_level} />
+          <InfoItem label="EDUCATION" value={data.education} />
+          <InfoItem label="MARITAL STATUS" value={data.marital_status} className="col-span-2" />
         </div>
       ),
     },
@@ -263,30 +266,30 @@ function PersonaContent({
       title: 'Motivations & Values',
       icon: Heart,
       content: (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Core Motivators</h4>
-            <div className="flex flex-wrap gap-2">
+            <span className="meta-label">CORE MOTIVATORS</span>
+            <div className="flex flex-wrap gap-2 mt-3">
               {data.motivations_and_values.core_motivators.map((m, i) => (
-                <span key={i} className="px-3 py-1 bg-blue-50 text-brand-blue rounded-full text-sm">
+                <span key={i} className="px-4 py-2 bg-hartz-blue/10 text-hartz-blue rounded-full text-body-sm font-medium">
                   {m}
                 </span>
               ))}
             </div>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Key Values</h4>
-            <div className="flex flex-wrap gap-2">
+            <span className="meta-label">KEY VALUES</span>
+            <div className="flex flex-wrap gap-2 mt-3">
               {data.motivations_and_values.key_values.map((v, i) => (
-                <span key={i} className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">
+                <span key={i} className="px-4 py-2 bg-hartz-black/5 text-hartz-black rounded-full text-body-sm font-medium">
                   {v}
                 </span>
               ))}
             </div>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Vision of Success</h4>
-            <p className="text-slate-600">{data.motivations_and_values.vision_of_success}</p>
+            <span className="meta-label">VISION OF SUCCESS</span>
+            <p className="text-body text-hartz-muted mt-3">{data.motivations_and_values.vision_of_success}</p>
           </div>
         </div>
       ),
@@ -296,32 +299,35 @@ function PersonaContent({
       title: 'Psychographic Traits',
       icon: Brain,
       content: (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Lifestyle Habits</h4>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
+            <span className="meta-label">LIFESTYLE HABITS</span>
+            <ul className="mt-3 space-y-2">
               {data.psychographic_traits.lifestyle_habits.map((h, i) => (
-                <li key={i}>{h}</li>
+                <li key={i} className="text-body-sm text-hartz-muted flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-hartz-blue mt-2 flex-shrink-0" />
+                  {h}
+                </li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Hobbies</h4>
-            <div className="flex flex-wrap gap-2">
+            <span className="meta-label">HOBBIES</span>
+            <div className="flex flex-wrap gap-2 mt-3">
               {data.psychographic_traits.hobbies.map((h, i) => (
-                <span key={i} className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-sm">
+                <span key={i} className="px-4 py-2 bg-hartz-black/5 text-hartz-muted rounded-full text-body-sm">
                   {h}
                 </span>
               ))}
             </div>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Spending Behavior</h4>
-            <p className="text-slate-600">{data.psychographic_traits.spending_behavior}</p>
+            <span className="meta-label">SPENDING BEHAVIOR</span>
+            <p className="text-body text-hartz-muted mt-3">{data.psychographic_traits.spending_behavior}</p>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Decision Making Process</h4>
-            <p className="text-slate-600">{data.psychographic_traits.decision_making_process}</p>
+            <span className="meta-label">DECISION MAKING</span>
+            <p className="text-body text-hartz-muted mt-3">{data.psychographic_traits.decision_making_process}</p>
           </div>
         </div>
       ),
@@ -331,34 +337,43 @@ function PersonaContent({
       title: 'Pain Points & Challenges',
       icon: Heart,
       content: (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Internal Obstacles</h4>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
+            <span className="meta-label">INTERNAL OBSTACLES</span>
+            <ul className="mt-3 space-y-2">
               {data.pain_points.internal_obstacles.map((o, i) => (
-                <li key={i}>{o}</li>
+                <li key={i} className="text-body-sm text-hartz-muted flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0" />
+                  {o}
+                </li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">External Obstacles</h4>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
+            <span className="meta-label">EXTERNAL OBSTACLES</span>
+            <ul className="mt-3 space-y-2">
               {data.pain_points.external_obstacles.map((o, i) => (
-                <li key={i}>{o}</li>
+                <li key={i} className="text-body-sm text-hartz-muted flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-2 flex-shrink-0" />
+                  {o}
+                </li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Unmet Needs</h4>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
+            <span className="meta-label">UNMET NEEDS</span>
+            <ul className="mt-3 space-y-2">
               {data.pain_points.unmet_needs.map((n, i) => (
-                <li key={i}>{n}</li>
+                <li key={i} className="text-body-sm text-hartz-muted flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-hartz-blue mt-2 flex-shrink-0" />
+                  {n}
+                </li>
               ))}
             </ul>
           </div>
-          <div>
-            <h4 className="font-medium text-slate-700 mb-2">Emotional Impact</h4>
-            <p className="text-slate-600 italic">&quot;{data.pain_points.emotional_weight}&quot;</p>
+          <div className="p-4 rounded-xl bg-hartz-black/5 border-l-4 border-hartz-black">
+            <span className="meta-label">EMOTIONAL WEIGHT</span>
+            <p className="text-body text-hartz-muted mt-2 italic">&quot;{data.pain_points.emotional_weight}&quot;</p>
           </div>
         </div>
       ),
@@ -368,34 +383,40 @@ function PersonaContent({
       title: 'Buying Journey',
       icon: ShoppingCart,
       content: (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Approach to Purchases</h4>
-            <p className="text-slate-600">{data.buying_journey.approach}</p>
+            <span className="meta-label">APPROACH TO PURCHASES</span>
+            <p className="text-body text-hartz-muted mt-3">{data.buying_journey.approach}</p>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Key Influences</h4>
-            <div className="flex flex-wrap gap-2">
+            <span className="meta-label">KEY INFLUENCES</span>
+            <div className="flex flex-wrap gap-2 mt-3">
               {data.buying_journey.influences.map((i, idx) => (
-                <span key={idx} className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-sm">
+                <span key={idx} className="px-4 py-2 bg-hartz-blue/10 text-hartz-blue rounded-full text-body-sm font-medium">
                   {i}
                 </span>
               ))}
             </div>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Conversion Triggers</h4>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
+            <span className="meta-label">CONVERSION TRIGGERS</span>
+            <ul className="mt-3 space-y-2">
               {data.buying_journey.conversion_triggers.map((t, i) => (
-                <li key={i}>{t}</li>
+                <li key={i} className="text-body-sm text-hartz-muted flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                  {t}
+                </li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Abandonment Reasons</h4>
-            <ul className="list-disc list-inside text-red-600 space-y-1">
+            <span className="meta-label">ABANDONMENT REASONS</span>
+            <ul className="mt-3 space-y-2">
               {data.buying_journey.abandonment_reasons.map((r, i) => (
-                <li key={i}>{r}</li>
+                <li key={i} className="text-body-sm text-red-500 flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 flex-shrink-0" />
+                  {r}
+                </li>
               ))}
             </ul>
           </div>
@@ -408,13 +429,13 @@ function PersonaContent({
       icon: Brain,
       content: (
         <div className="space-y-6">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-brand-blue mb-2">{data.personality_typing.mbti}</h4>
-            <p className="text-slate-600">{data.personality_typing.mbti_explanation}</p>
+          <div className="p-6 rounded-xl bg-hartz-blue/10">
+            <span className="meta-label text-hartz-blue">{data.personality_typing.mbti}</span>
+            <p className="text-body text-hartz-muted mt-3">{data.personality_typing.mbti_explanation}</p>
           </div>
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <h4 className="font-semibold text-purple-700 mb-2">{data.personality_typing.enneagram}</h4>
-            <p className="text-slate-600">{data.personality_typing.enneagram_explanation}</p>
+          <div className="p-6 rounded-xl bg-hartz-black/5">
+            <span className="meta-label">{data.personality_typing.enneagram}</span>
+            <p className="text-body text-hartz-muted mt-3">{data.personality_typing.enneagram_explanation}</p>
           </div>
         </div>
       ),
@@ -424,8 +445,8 @@ function PersonaContent({
       title: 'Internal Monologue',
       icon: MessageCircle,
       content: (
-        <div className="p-6 bg-slate-100 rounded-lg border-l-4 border-brand-blue">
-          <p className="text-lg italic text-slate-700">&quot;{data.internal_monologue}&quot;</p>
+        <div className="p-6 rounded-xl bg-hartz-black/5 border-l-4 border-hartz-blue">
+          <p className="text-subheading italic text-hartz-muted">&quot;{data.internal_monologue}&quot;</p>
         </div>
       ),
     },
@@ -434,38 +455,47 @@ function PersonaContent({
       title: 'Deep Psychological Insights',
       icon: Sparkles,
       content: data.psychological_depth ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Core Fears</h4>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
+            <span className="meta-label">CORE FEARS</span>
+            <ul className="mt-3 space-y-2">
               {data.psychological_depth.core_fears.map((f, i) => (
-                <li key={i}>{f}</li>
+                <li key={i} className="text-body-sm text-hartz-muted flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2 flex-shrink-0" />
+                  {f}
+                </li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Hidden Desires</h4>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
+            <span className="meta-label">HIDDEN DESIRES</span>
+            <ul className="mt-3 space-y-2">
               {data.psychological_depth.hidden_desires.map((d, i) => (
-                <li key={i}>{d}</li>
+                <li key={i} className="text-body-sm text-hartz-muted flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-hartz-blue mt-2 flex-shrink-0" />
+                  {d}
+                </li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Emotional Contradictions</h4>
-            <ul className="list-disc list-inside text-slate-600 space-y-1">
+            <span className="meta-label">EMOTIONAL CONTRADICTIONS</span>
+            <ul className="mt-3 space-y-2">
               {data.psychological_depth.emotional_contradictions.map((c, i) => (
-                <li key={i}>{c}</li>
+                <li key={i} className="text-body-sm text-hartz-muted flex items-start gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-2 flex-shrink-0" />
+                  {c}
+                </li>
               ))}
             </ul>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">Public Mask vs Private Self</h4>
-            <p className="text-slate-600">{data.psychological_depth.public_mask_vs_private_self}</p>
+            <span className="meta-label">PUBLIC MASK VS PRIVATE SELF</span>
+            <p className="text-body text-hartz-muted mt-3">{data.psychological_depth.public_mask_vs_private_self}</p>
           </div>
           <div>
-            <h4 className="font-medium text-slate-700 mb-2">What Makes Them Feel Seen</h4>
-            <p className="text-slate-600">{data.psychological_depth.feeling_seen}</p>
+            <span className="meta-label">WHAT MAKES THEM FEEL SEEN</span>
+            <p className="text-body text-hartz-muted mt-3">{data.psychological_depth.feeling_seen}</p>
           </div>
         </div>
       ) : null,
@@ -475,136 +505,130 @@ function PersonaContent({
   return (
     <div className="space-y-4">
       {sections.map((section) => (
-        <Card key={section.id} className="overflow-hidden">
+        <div key={section.id} className="bento-card overflow-hidden">
           <button
             onClick={() => toggleSection(section.id)}
-            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+            className="w-full p-6 flex items-center justify-between hover:bg-hartz-black/[0.02] transition-colors"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                <section.icon className="h-5 w-5 text-slate-600" />
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-hartz-black/5 flex items-center justify-center">
+                <section.icon className="h-5 w-5 text-hartz-muted" />
               </div>
-              <span className="font-semibold text-slate-900">{section.title}</span>
+              <span className="text-subheading text-hartz-black">{section.title}</span>
               {isSectionLocked(section.id) && (
-                <Lock className="h-4 w-4 text-slate-400" />
+                <Lock className="h-4 w-4 text-hartz-muted" />
               )}
             </div>
             {expandedSections.has(section.id) ? (
-              <ChevronUp className="h-5 w-5 text-slate-400" />
+              <ChevronUp className="h-5 w-5 text-hartz-muted" />
             ) : (
-              <ChevronDown className="h-5 w-5 text-slate-400" />
+              <ChevronDown className="h-5 w-5 text-hartz-muted" />
             )}
           </button>
-          
+
           {expandedSections.has(section.id) && (
-            <CardContent className={`pt-0 ${isSectionLocked(section.id) ? 'blur-content' : ''}`}>
+            <div className={`px-6 pb-6 ${isSectionLocked(section.id) ? 'blur-content' : ''}`}>
+              <div className="hairline mb-6" />
               {section.content}
-            </CardContent>
+            </div>
           )}
-        </Card>
+        </div>
       ))}
     </div>
   )
 }
 
 // Company Content Component for B2B
-function CompanyContent({ 
-  data, 
-  isUnlocked, 
-  expandedSections, 
-  toggleSection, 
-  isSectionLocked 
-}: { 
+function CompanyContent({
+  data,
+  isUnlocked,
+  expandedSections,
+  toggleSection,
+  isSectionLocked
+}: {
   data: CompanyProfile
   isUnlocked: boolean
   expandedSections: Set<string>
   toggleSection: (section: string) => void
   isSectionLocked: (section: string) => boolean
 }) {
-  // Simplified company sections
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Company Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <InfoItem label="Industry" value={data.industry} />
-            <InfoItem label="Size" value={data.size} />
-            <InfoItem label="Location" value={data.location} />
-            <InfoItem label="Founded" value={data.founded} />
-            <InfoItem label="Business Model" value={data.business_model} className="col-span-2" />
+      <div className="bento-card">
+        <div className="p-6">
+          <span className="meta-label">COMPANY OVERVIEW</span>
+          <div className="grid grid-cols-2 gap-6 mt-6">
+            <InfoItem label="INDUSTRY" value={data.industry} />
+            <InfoItem label="SIZE" value={data.size} />
+            <InfoItem label="LOCATION" value={data.location} />
+            <InfoItem label="FOUNDED" value={data.founded} />
+            <InfoItem label="BUSINESS MODEL" value={data.business_model} className="col-span-2" />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card className={isSectionLocked('culture') ? 'blur-content' : ''}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Company Culture
-            {isSectionLocked('culture') && <Lock className="h-4 w-4 text-slate-400" />}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+      <div className={`bento-card ${isSectionLocked('culture') ? 'blur-content' : ''}`}>
+        <div className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="meta-label">COMPANY CULTURE</span>
+            {isSectionLocked('culture') && <Lock className="h-4 w-4 text-hartz-muted" />}
+          </div>
+          <div className="space-y-6">
             <div>
-              <h4 className="font-medium text-slate-700 mb-2">Values</h4>
-              <div className="flex flex-wrap gap-2">
+              <span className="text-body-sm font-medium text-hartz-black">Values</span>
+              <div className="flex flex-wrap gap-2 mt-3">
                 {data.company_culture.values.map((v, i) => (
-                  <span key={i} className="px-3 py-1 bg-blue-50 text-brand-blue rounded-full text-sm">
+                  <span key={i} className="px-4 py-2 bg-hartz-blue/10 text-hartz-blue rounded-full text-body-sm font-medium">
                     {v}
                   </span>
                 ))}
               </div>
             </div>
             <div>
-              <h4 className="font-medium text-slate-700 mb-2">Work Environment</h4>
-              <p className="text-slate-600">{data.company_culture.work_environment}</p>
+              <span className="text-body-sm font-medium text-hartz-black">Work Environment</span>
+              <p className="text-body text-hartz-muted mt-2">{data.company_culture.work_environment}</p>
             </div>
             <div>
-              <h4 className="font-medium text-slate-700 mb-2">Decision Making Style</h4>
-              <p className="text-slate-600">{data.company_culture.decision_making_style}</p>
+              <span className="text-body-sm font-medium text-hartz-black">Decision Making Style</span>
+              <p className="text-body text-hartz-muted mt-2">{data.company_culture.decision_making_style}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card className={isSectionLocked('buying') ? 'blur-content' : ''}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Buying Process
-            {isSectionLocked('buying') && <Lock className="h-4 w-4 text-slate-400" />}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <InfoItem label="Typical Cycle Length" value={data.buying_process.typical_cycle_length} />
+      <div className={`bento-card ${isSectionLocked('buying') ? 'blur-content' : ''}`}>
+        <div className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <span className="meta-label">BUYING PROCESS</span>
+            {isSectionLocked('buying') && <Lock className="h-4 w-4 text-hartz-muted" />}
+          </div>
+          <div className="space-y-6">
+            <InfoItem label="TYPICAL CYCLE LENGTH" value={data.buying_process.typical_cycle_length} />
             <div>
-              <h4 className="font-medium text-slate-700 mb-2">Stakeholders Involved</h4>
-              <div className="flex flex-wrap gap-2">
+              <span className="text-body-sm font-medium text-hartz-black">Stakeholders Involved</span>
+              <div className="flex flex-wrap gap-2 mt-3">
                 {data.buying_process.stakeholders_involved.map((s, i) => (
-                  <span key={i} className="px-3 py-1 bg-orange-50 text-brand-orange rounded-full text-sm">
+                  <span key={i} className="px-4 py-2 bg-hartz-black/5 text-hartz-black rounded-full text-body-sm font-medium">
                     {s}
                   </span>
                 ))}
               </div>
             </div>
-            <InfoItem label="Budget Authority" value={data.buying_process.budget_authority} />
-            <InfoItem label="Procurement Process" value={data.buying_process.procurement_process} />
+            <InfoItem label="BUDGET AUTHORITY" value={data.buying_process.budget_authority} />
+            <InfoItem label="PROCUREMENT PROCESS" value={data.buying_process.procurement_process} />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
 
-// Helper component for info items
+// Info Item Component
 function InfoItem({ label, value, className = '' }: { label: string; value: string; className?: string }) {
   return (
     <div className={className}>
-      <span className="text-sm text-slate-500">{label}</span>
-      <p className="font-medium text-slate-900">{value}</p>
+      <span className="meta-label">{label}</span>
+      <p className="text-body text-hartz-black mt-1">{value}</p>
     </div>
   )
 }
@@ -614,7 +638,7 @@ function ChatSidebar({ onClose, personaData }: { onClose: () => void; personaDat
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
-      content: '🌐 Hello! I\'m Penelope. I\'ve created this persona based on your business context. Feel free to ask me anything about them - why they think a certain way, how to reach them, or to dive deeper into any aspect of their profile. What would you like to explore? 🌐',
+      content: 'Hello! I\'m Penelope. I\'ve created this persona based on your business context. Feel free to ask me anything about them - why they think a certain way, how to reach them, or to dive deeper into any aspect of their profile. What would you like to explore?',
     },
   ])
   const [input, setInput] = useState('')
@@ -640,14 +664,14 @@ function ChatSidebar({ onClose, personaData }: { onClose: () => void; personaDat
       })
 
       const data = await response.json()
-      
+
       if (data.response) {
         setMessages(prev => [...prev, { role: 'assistant', content: data.response }])
       }
     } catch (error) {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: '🌐 I apologize, but I encountered an error. Please try again. 🌐' 
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error. Please try again.'
       }])
     } finally {
       setIsLoading(false)
@@ -656,18 +680,23 @@ function ChatSidebar({ onClose, personaData }: { onClose: () => void; personaDat
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-blue to-brand-orange flex items-center justify-center">
-            <span className="text-white font-bold text-sm">P</span>
+      {/* Header */}
+      <div className="p-4 border-b border-hartz-border flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-hartz-blue/10 flex items-center justify-center">
+            <Sparkles className="h-4 w-4 text-hartz-blue" />
           </div>
-          <span className="font-semibold">Chat with Penelope</span>
+          <span className="text-subheading text-hartz-black">Chat with Penelope</span>
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-          ✕
+        <button
+          onClick={onClose}
+          className="w-8 h-8 rounded-full hover:bg-hartz-black/5 flex items-center justify-center transition-colors"
+        >
+          <X className="h-4 w-4 text-hartz-muted" />
         </button>
       </div>
 
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, i) => (
           <div
@@ -675,10 +704,10 @@ function ChatSidebar({ onClose, personaData }: { onClose: () => void; personaDat
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[80%] p-3 rounded-lg ${
+              className={`max-w-[85%] p-4 rounded-2xl text-body-sm ${
                 msg.role === 'user'
-                  ? 'bg-brand-blue text-white'
-                  : 'bg-slate-100 text-slate-900'
+                  ? 'bg-hartz-blue text-white'
+                  : 'bg-hartz-black/5 text-hartz-black'
               }`}
             >
               {msg.content}
@@ -687,18 +716,19 @@ function ChatSidebar({ onClose, personaData }: { onClose: () => void; personaDat
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-slate-100 p-3 rounded-lg">
+            <div className="bg-hartz-black/5 p-4 rounded-2xl">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <span className="w-2 h-2 bg-hartz-muted rounded-full animate-bounce" />
+                <span className="w-2 h-2 bg-hartz-muted rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                <span className="w-2 h-2 bg-hartz-muted rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
               </div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-4 border-t border-slate-200">
+      {/* Input */}
+      <div className="p-4 border-t border-hartz-border">
         <div className="flex gap-2">
           <input
             type="text"
@@ -706,10 +736,10 @@ function ChatSidebar({ onClose, personaData }: { onClose: () => void; personaDat
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Ask Penelope anything..."
-            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue"
+            className="flex-1 px-4 py-3 rounded-xl border border-hartz-border bg-hartz-white text-body-sm text-hartz-black placeholder:text-hartz-muted/60 focus:outline-none focus:border-hartz-blue focus:ring-2 focus:ring-hartz-blue/10"
           />
-          <Button onClick={handleSend} disabled={isLoading}>
-            Send
+          <Button size="icon" onClick={handleSend} disabled={isLoading}>
+            <Send className="h-4 w-4" />
           </Button>
         </div>
       </div>
