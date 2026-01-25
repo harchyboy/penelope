@@ -32,12 +32,23 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // Hartz AI Brand Colors (from the PDF)
+        // Hartz AI Official Brand Colors
+        'hartz-sky-blue': '#4A90E2',        // Primary - trust, clarity, intelligence
+        'hartz-growth-green': '#7CB342',    // Secondary - empowerment, growth
+        'hartz-confidence-coral': '#FF6F61', // Accent - achievement, energy (use sparingly)
+        'hartz-warm-amber': '#FFB74D',      // Optional accent - warmth, optimism
+        'hartz-charcoal': '#37474F',        // Primary text
+        'hartz-warm-grey': '#B0BEC5',       // Secondary text, borders
+        'hartz-light-grey': '#ECEFF1',      // Backgrounds
+        'hartz-off-white': '#FAFAFA',       // Cards, panels
+        // Legacy brand colors (for backwards compatibility)
         brand: {
-          blue: '#3B82A0',      // Primary blue from slides
-          orange: '#E88B4D',    // Accent orange
-          dark: '#1A1A2E',      // Dark background
-          light: '#F8F9FA',     // Light background
+          blue: '#4A90E2',
+          green: '#7CB342',
+          coral: '#FF6F61',
+          orange: '#E88B4D',
+          dark: '#37474F',
+          light: '#FAFAFA',
         },
         // Semantic colors
         primary: {

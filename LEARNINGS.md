@@ -40,3 +40,39 @@
 - `src/app/create/page.tsx` - Added business_name and industry query param reading
 - `src/app/globals.css` - Added `.noise-overlay` CSS class
 - `tailwind.config.ts` - No changes needed (brand-blue already #4A90E2)
+
+---
+
+## UI-001 Update - 2026-01-25
+
+**Area:** Landing page hero section - Animated persona visualization
+
+**Pattern discovered:** Use CSS transitions with conditional classes + inline `style={{ transitionDelay }}` for sequenced animations. This is cleaner than using multiple JS timers for each element and provides smooth, GPU-accelerated animations.
+
+**Animation sequence pattern:**
+```tsx
+const [isAnimated, setIsAnimated] = useState(false)
+useEffect(() => {
+  const timer = setTimeout(() => setIsAnimated(true), 400)
+  return () => clearTimeout(timer)
+}, [])
+
+// Then in JSX:
+<div
+  className={`transition-all duration-500 ${isAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3'}`}
+  style={{ transitionDelay: '200ms' }}
+>
+```
+
+**Gotcha:**
+- The `'use client'` directive is required when using `useState`, `useEffect`, and `useRouter` hooks
+- The global `Header` component is rendered via `layout.tsx`, so landing page shouldn't duplicate it
+- Use Hartz brand color classes (`hartz-sky-blue`, `hartz-growth-green`, etc.) for consistency
+- 40px border-radius still requires inline style as Tailwind doesn't have this value by default
+
+**Icons used from lucide-react:**
+- `Star`, `TrendingUp`, `Clock`, `Users` - for trait tags
+- `Brain`, `Heart` - for progress bar icons
+
+**Files modified:**
+- `src/app/page.tsx` - Added `PersonaVisualization` component with animated elements
