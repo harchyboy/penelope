@@ -16,11 +16,629 @@ B2B buyer personas, and basic admin dashboard for Penelope.
 - Supabase packages already installed (@supabase/supabase-js, @supabase/ssr)
 - Claude API integration via @anthropic-ai/sdk
 - Existing prompts in src/lib/prompts.ts
+- Supabase clients: browser client in client.ts, server client in server.ts, middleware helper in middleware.ts
+- Supabase SSR v0.8.0 uses getAll/setAll pattern for cookies
+- Database schema in supabase/migrations/001_initial_schema.sql with RLS policies
+- AuthProvider in src/components/providers/auth-provider.tsx provides useAuth hook for auth state
+- Persona name is derived from persona_data.name or company_profile.name (not a DB column)
+- For b2b_buyer personas, company_id is a self-referencing FK to parent company persona
+- B2B company profiles saved in TWO places: personas.company_profile (for display) AND company_profiles table (for linking buyer_personas)
+- Middleware role check: user role fetched from public.users table (not auth.users) in middleware.ts
+- Admin routes protected via adminRoutes array in src/middleware.ts, non-admins redirected to /dashboard?error=admin_required
 
 ## Key Files
 - src/types/index.ts - User, Subscription, Persona types already defined
 - src/components/ui/ - Button, Card, Input, Select components
 - src/lib/utils.ts - cn(), formatDate(), formatCurrency() helpers
 - src/app/api/generate-persona/route.ts - Current in-memory persona generation
+
+---
+
+## 2026-01-22 - US-001: Set up Supabase client configuration
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/lib/supabase/client.ts with browser client using createBrowserClient
+- Created src/lib/supabase/server.ts with server client using createServerClient and cookie handling
+- Created src/lib/supabase/middleware.ts with updateSession helper for auth session refresh
+- Updated .env.example with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+### Files changed
+- src/lib/supabase/client.ts (new)
+- src/lib/supabase/server.ts (new)
+- src/lib/supabase/middleware.ts (new)
+- .env.example (modified)
+
+### Learnings for future iterations
+- Supabase SSR v0.8.0 uses getAll/setAll for cookies (not get/set individually)
+- The server client uses try/catch around setAll to handle Server Component scenarios
+- The middleware helper exports user along with response for easy auth checks
+- Path alias @/ points to ./src/*
+
+---
+
+## 2026-01-22 - US-002: Create database schema SQL for users and personas
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created supabase/migrations/001_initial_schema.sql with complete schema
+- Users table: references auth.users(id), includes email, name, avatar_url, role, free_persona_used, timestamps
+- Personas table: includes user_id FK, type (b2c_individual/b2b_company/b2b_buyer), business_context and persona_data as JSONB, company_profile JSONB for b2b_company, company_id self-reference for b2b_buyer, is_unlocked, is_complete
+- Company_profiles table: user_id FK, company_data JSONB, timestamps
+- Buyer_personas table: company_profile_id FK, persona_data JSONB, created_at
+- Full RLS policies: users see own data, admins see all
+- Automatic updated_at triggers via handle_updated_at() function
+
+### Files changed
+- supabase/migrations/001_initial_schema.sql (new)
+
+### Learnings for future iterations
+- Supabase users table should reference auth.users(id) with ON DELETE CASCADE
+- The personas table uses a self-referencing FK (company_id) for b2b_buyer to link back to b2b_company persona
+- RLS policies for nested tables (buyer_personas) need EXISTS subqueries to check parent ownership
+- Use IF NOT EXISTS for indexes to make migration idempotent
+
+---
+
+## 2026-01-22 - US-003: Create auth middleware for protected routes
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/middleware.ts with Next.js middleware for route protection
+- Protects /dashboard and /admin routes - redirects unauthenticated users to /login
+- Protects /persona/[id]/unlock routes using regex pattern matching
+- Redirects authenticated users away from /login, /register to /dashboard
+- Allows public access to /, /create, /persona/[id] (preview mode)
+- Uses updateSession from src/lib/supabase/middleware.ts to refresh auth session
+- Includes redirect query param for post-login return to original destination
+
+### Files changed
+- src/middleware.ts (new)
+
+### Learnings for future iterations
+- Next.js middleware matcher should exclude static files and api routes for performance
+- Use regex patterns for dynamic protected routes (e.g., /persona/[id]/unlock)
+- Middleware config matcher uses negative lookahead: '/((?!_next/static|...).*)'
+- Store redirect target in URL query params for post-auth navigation
+
+---
+
+## 2026-01-22 - US-004: Create registration page UI
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/(auth)/register/page.tsx with full registration form
+- Form fields: email (required), name (optional), password (required), confirm password (required)
+- Client-side validation: email format regex, password min 8 chars, passwords must match
+- Loading state during submission using Button's isLoading prop
+- Error display: field-level errors below inputs, general errors in banner at top
+- Link to login page for existing users with redirect param preservation
+- Uses existing UI components: Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent
+- Created placeholder src/app/(auth)/register/actions.ts for US-005 implementation
+
+### Files changed
+- src/app/(auth)/register/page.tsx (new)
+- src/app/(auth)/register/actions.ts (new - placeholder)
+
+### Learnings for future iterations
+- Route groups (auth) allow shared layouts without affecting URL structure
+- Input component has built-in label, error, and helpText props - no need for separate label elements
+- Button component has isLoading prop that disables button and shows spinner
+- Use searchParams to capture redirect query param for post-auth navigation
+- Dynamic imports for server actions help avoid SSR issues in client components
+
+---
+
+## 2026-01-22 - US-005: Implement registration server action
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Implemented src/app/(auth)/register/actions.ts with full registerUser server action
+- Server-side validation: email format, password minimum 8 characters
+- Calls Supabase auth.signUp with email, password, and optional name in user_metadata
+- Creates user record in public.users table with id, email, name, role='user', free_persona_used=false
+- Handles existing email error with user-friendly message
+- Returns success or error response, graceful error handling throughout
+
+### Files changed
+- src/app/(auth)/register/actions.ts (modified)
+
+### Learnings for future iterations
+- Supabase auth.signUp returns { data: { user }, error } - check both
+- After auth signup, need to also insert into public.users table since it's separate from auth.users
+- Use email.toLowerCase().trim() for consistent email handling
+- Pass optional name via options.data in signUp to store in user_metadata
+- RLS policy "Users can insert own profile" allows inserting with auth.uid() = id after signup
+
+---
+
+## 2026-01-22 - US-006: Create login page UI
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/(auth)/login/page.tsx with full login form
+- Form fields: email (required), password (required)
+- Client-side validation: email format regex, password required
+- Loading state during submission using Button's isLoading prop
+- Error display: field-level errors below inputs, general errors in red banner at top
+- Link to registration page for new users with redirect param preservation
+- Link to forgot password (placeholder)
+- Uses existing UI components: Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent
+- Created placeholder src/app/(auth)/login/actions.ts for US-007 implementation
+- Styled consistently with registration page for cohesive auth experience
+
+### Files changed
+- src/app/(auth)/login/page.tsx (new)
+- src/app/(auth)/login/actions.ts (new - placeholder)
+
+### Learnings for future iterations
+- Login page is simpler than registration: no name field, no confirm password
+- Use autoComplete="current-password" for login vs "new-password" for registration
+- Placeholder server actions allow the page to compile while full implementation is deferred
+- The login page follows the exact same pattern as registration for consistency
+
+---
+
+## 2026-01-22 - US-007: Implement login server action
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Implemented src/app/(auth)/login/actions.ts with full loginUser server action
+- Server-side validation: email format regex, password required
+- Calls Supabase auth.signInWithPassword with email and password
+- Updates user's updated_at timestamp on successful login via public.users table
+- Returns success with redirectTo URL or error response
+- Handles specific auth errors: invalid credentials, email not confirmed
+- Graceful error handling with user-friendly messages
+
+### Files changed
+- src/app/(auth)/login/actions.ts (modified)
+
+### Learnings for future iterations
+- Supabase auth.signInWithPassword returns { data: { user, session }, error }
+- Login action should update updated_at in users table to track last login
+- Handle "Invalid login credentials" and "Email not confirmed" errors specifically
+- Server action can return redirectTo but client often handles redirect logic with query params
+- Login flow follows same pattern as registration but without profile creation (user already exists)
+
+---
+
+## 2026-01-22 - US-008: Create auth context provider
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/components/providers/auth-provider.tsx with AuthContext
+- Provides: user (from public.users), supabaseUser (from auth.users), session, isLoading, isAuthenticated, signOut, refreshUser
+- Subscribes to Supabase auth.onAuthStateChange for real-time auth state updates
+- Fetches user profile from public.users table when authenticated
+- Wrapped app in AuthProvider in src/app/layout.tsx
+- Exported useAuth hook for consuming components
+
+### Files changed
+- src/components/providers/auth-provider.tsx (new)
+- src/app/layout.tsx (modified)
+
+### Learnings for future iterations
+- AuthProvider must be a client component ('use client') to use React hooks and Supabase subscriptions
+- Both supabaseUser (auth.users) and user (public.users) are useful - supabaseUser for auth state, user for app-specific data
+- useCallback is important to memoize functions used in useEffect dependencies
+- The auth subscription cleanup is handled by returning subscription.unsubscribe() from useEffect
+
+---
+
+## 2026-01-22 - US-009: Update header navigation with auth state
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/components/header.tsx with full auth state integration
+- Shows Login/Register buttons and "Create Persona" CTA when logged out
+- Shows user email/name, Dashboard link, and Sign Out button when logged in
+- Mobile responsive with hamburger menu (hidden on md+ screens)
+- Uses Lucide icons: Menu, X, User, LogOut, LayoutDashboard, ArrowRight
+- Loading skeleton shown while auth state is being determined
+- Added Header to layout.tsx for site-wide display
+- Removed embedded header from home page to avoid duplication
+
+### Files changed
+- src/components/header.tsx (new)
+- src/app/layout.tsx (modified - added Header import and usage)
+- src/app/page.tsx (modified - removed embedded header section)
+
+### Learnings for future iterations
+- The useAuth hook provides isLoading state - use it to show skeleton during auth initialization
+- Mobile menus should close on link click (use closeMobileMenu callback)
+- Sign Out function from auth context can throw - wrap in try/catch
+- Display name fallback: user.name || user.email?.split('@')[0] || 'User'
+
+---
+
+## 2026-01-22 - US-010: Create user dashboard page
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/dashboard/page.tsx with full dashboard UI
+- Welcome message displaying user's name or email fallback
+- Grid of user's saved personas as interactive cards (uses Card with hover prop)
+- PersonaCard component showing: persona name, type badge (B2C/B2B Company/B2B Buyer), created date, lock/unlock icon
+- Each card links to /persona/[id] for detail view
+- EmptyState component with CTA to create first persona when no personas exist
+- FreePersonaStatus banner showing whether free persona is available or used
+- LoadingSkeleton component for data loading state
+- Error state handling with retry button
+- Created placeholder server actions in actions.ts (getUserPersonas, getUserFreePersonaStatus)
+
+### Files changed
+- src/app/dashboard/page.tsx (new)
+- src/app/dashboard/actions.ts (new)
+
+### Learnings for future iterations
+- Dashboard is a client component ('use client') to use useAuth hook and useState
+- TypeBadge component uses config object pattern for type-safe styling per PersonaType
+- Card component has hover prop for interactive card styling
+- formatDate from utils.ts for consistent date formatting
+- Server actions need to verify user authentication and return typed ApiResponse
+- Use Promise.all to fetch multiple data sources in parallel for dashboard loading
+
+---
+
+## 2026-01-22 - US-011: Create dashboard data fetching
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Fully implemented getUserPersonas server action in src/app/dashboard/actions.ts
+- Queries personas table filtered by user_id, ordered by created_at descending
+- For B2B buyer personas, fetches linked company profile data from parent company
+- Added PersonaListItem type with linked_company_profile field for b2b_buyer personas
+- Fixed Persona type in src/types/index.ts - removed invalid 'name' field (doesn't exist in DB)
+- Implemented getUserFreePersonaStatus to fetch user's free persona usage status
+- Graceful error handling with typed ApiResponse<T> throughout
+
+### Files changed
+- src/app/dashboard/actions.ts (modified - full implementation)
+- src/types/index.ts (modified - removed name field from Persona interface)
+
+### Learnings for future iterations
+- Persona type 'name' field doesn't exist in DB - name is derived from persona_data.name or company_profile.name
+- For b2b_buyer personas, company_id links to parent company persona (self-referencing FK)
+- Use Map<string, T> to efficiently lookup related data when joining multiple queries
+- Supabase .in() query is efficient for batch fetching related records
+
+---
+
+## 2026-01-22 - US-012: Update persona generation to save to database
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Updated src/app/api/generate-persona/route.ts to check user authentication status
+- For authenticated users: save persona to Supabase personas table with user_id, is_unlocked=false
+- For unauthenticated users: keep in-memory previewStore for session-based preview
+- Updated GET handler to check previewStore first, then query Supabase database
+- Returns is_preview and is_owner flags based on authentication and ownership
+- Renamed personaStore to previewStore to clarify its purpose
+
+### Files changed
+- src/app/api/generate-persona/route.ts (modified)
+
+### Learnings for future iterations
+- API routes can use createClient() from server.ts to check authentication
+- await supabase.auth.getUser() returns { data: { user } } in API routes
+- Use .insert().select().single() to get the inserted row with generated ID
+- Keep in-memory storage only for temporary preview data (unauthenticated users)
+- The previewStore will be lost on server restart - acceptable for preview flow
+
+---
+
+## 2026-01-22 - US-013: Update persona page to fetch from database
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Updated src/app/persona/[id]/page.tsx to use useAuth hook for auth state awareness
+- Added PersonaApiResponse interface to properly type API response with is_owner and is_preview flags
+- Added proper 404 handling with a dedicated UI state (not using Next.js notFound() to keep client-side rendering)
+- Updated unlock banner to show different CTAs based on authentication and ownership:
+  - Unauthenticated: "Register to Unlock" with redirect param
+  - Authenticated owner with free unlock available: "Use Free Unlock" linking to /persona/[id]/unlock
+  - Authenticated but no free unlock: "Upgrade Required" (disabled)
+- Error state improved with retry button and better styling
+
+### Files changed
+- src/app/persona/[id]/page.tsx (modified)
+
+### Learnings for future iterations
+- The API route GET already returns is_owner and is_preview flags - use them in the frontend
+- For client components, handle 404 with state rather than notFound() to avoid server-side rendering issues
+- Use authLoading state to prevent flash of wrong content during auth initialization
+- Pass redirect param to registration page for post-auth navigation: `/register?redirect=/persona/${id}`
+
+---
+
+## 2026-01-22 - US-014: Implement free persona unlock flow
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/persona/[id]/actions.ts with unlockFreePersona server action
+- Server action validates: user authenticated, persona exists, user owns persona, free unlock not yet used
+- Updates persona.is_unlocked=true and user.free_persona_used=true in single transaction with rollback on failure
+- Updated persona page to add inline "Use Free Unlock" button (replaces Link to separate unlock page)
+- Added unlockLoading, unlockError, unlockSuccess state for UX feedback
+- Success message displayed after unlock, local state updated without full page refresh
+- Button hidden when user has already used free unlock
+
+### Files changed
+- src/app/persona/[id]/actions.ts (new)
+- src/app/persona/[id]/page.tsx (modified)
+
+### Learnings for future iterations
+- Server actions can import from @/lib/supabase/server directly for auth checks
+- Use refreshUser() from useAuth hook to update client-side user state after server mutations
+- For two-step database updates, implement rollback if second update fails
+- The isUnlocked flag in frontend unlocks preview content; psychological_depth remains locked even when is_unlocked=true (handled by isSectionLocked function)
+- CheckCircle2 icon from lucide-react is good for success feedback
+
+---
+
+## 2026-01-22 - US-015: Add registration prompt on persona preview
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Updated banner text on persona page to exactly match acceptance criteria: "Register to save this persona and unlock one for free"
+- Registration CTA banner, redirect query param handling, and post-registration redirect were already implemented in previous stories (US-013, US-014)
+- Registration flow: User clicks "Register to Unlock" → redirected to /register?redirect=/persona/[id] → after registration redirects back to persona page
+
+### Files changed
+- src/app/persona/[id]/page.tsx (modified - banner text only)
+
+### Learnings for future iterations
+- Before implementing a story, thoroughly check what's already been implemented in previous iterations
+- The registration redirect flow was built incrementally: US-004 created register page with redirect param handling, US-013 added register link with redirect param to persona page
+- A seemingly incomplete feature may already be implemented across multiple previous stories
+
+---
+
+## 2026-01-22 - US-016: Create B2B company profiles persistence
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Updated src/app/api/generate-persona/route.ts to save B2B company profiles to company_profiles table
+- Added company_profile_id in API response for linking buyer personas
+- Added CompanyProfileListItem type and getUserCompanyProfiles server action in src/app/dashboard/actions.ts
+- Server action counts linked buyer personas for each company profile
+- Added CompanyProfileCard component to dashboard showing: name, industry, size, buyer persona count
+- Added Company Profiles section to dashboard (only displays if user has company profiles)
+
+### Files changed
+- src/app/api/generate-persona/route.ts (modified - save to company_profiles table)
+- src/app/dashboard/actions.ts (modified - added CompanyProfileListItem type and getUserCompanyProfiles action)
+- src/app/dashboard/page.tsx (modified - added CompanyProfileCard and Company Profiles section)
+
+### Learnings for future iterations
+- B2B company profiles are saved in TWO places: personas.company_profile (JSONB) AND company_profiles table
+- The company_profiles table enables independent querying and linking buyer_personas
+- buyer_personas table links via company_profile_id (not via personas.company_id which is for self-referencing)
+- Use Map<string, number> to efficiently count related records when building list items
+
+---
+
+## 2026-01-22 - US-017: Create linked buyer personas for B2B
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/company/[id]/page.tsx - company profile detail page with buyer personas display
+- Created src/app/company/[id]/actions.ts - server actions for getCompanyProfile, createBuyerPersona, getCompanyContext
+- Created src/app/company/[id]/buyer/create/page.tsx - buyer persona creation wizard with pre-filled company context
+- Created src/app/api/generate-buyer-persona/route.ts - API endpoint to generate buyer personas via Claude and save to buyer_personas table
+- Company profile page displays linked buyer personas as cards with name, role, age, created date
+- "Add Buyer Persona" button on company profile page links to wizard
+- Wizard shows company context (read-only) and allows specifying buyer role, description, challenges
+- Quick role suggestions for common B2B buyer types (C-Suite, VP/Director, Manager, etc.)
+- Generated buyer personas saved to buyer_personas table with company_profile_id FK
+- Multiple buyer personas allowed per company
+
+### Files changed
+- src/app/company/[id]/page.tsx (new)
+- src/app/company/[id]/actions.ts (new)
+- src/app/company/[id]/buyer/create/page.tsx (new)
+- src/app/api/generate-buyer-persona/route.ts (new)
+
+### Learnings for future iterations
+- buyer_personas table links to company_profiles via company_profile_id (not to personas table)
+- The persona_data in buyer_personas follows same PersonaData interface as individual personas
+- Pre-filling context in wizards improves UX - company context helps generate relevant buyer personas
+- Role suggestions with quick-select buttons speed up user flow
+- formatBuyerPersonaContext function creates enriched prompt with company info for better AI output
+
+---
+
+## 2026-01-22 - US-018: Create company profile detail page
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Updated src/app/company/[id]/page.tsx to display company profile data in expandable sections
+- Added ExpandableSection component for collapsible content sections
+- Company profile now shows expandable sections for: Business Model, Company Culture, Challenges, Strategic Goals, Buying Process, Technology Stack
+- Company header card remains always visible with basic info (location, founded, size, industry)
+- Created src/app/company/[id]/buyer/[buyerId]/page.tsx - buyer persona detail page
+- Created src/app/company/[id]/buyer/[buyerId]/actions.ts - getBuyerPersona server action
+- Buyer persona detail page shows full persona info with expandable sections
+- Buyer persona cards now link to /company/[id]/buyer/[buyerId] detail page
+- Breadcrumb navigation: Dashboard > Company Name > Persona Name
+
+### Files changed
+- src/app/company/[id]/page.tsx (modified - added expandable sections)
+- src/app/company/[id]/buyer/[buyerId]/page.tsx (new)
+- src/app/company/[id]/buyer/[buyerId]/actions.ts (new)
+
+### Learnings for future iterations
+- Buyer personas are stored in buyer_personas table, separate from personas table
+- The acceptance criteria mentioned linking to /persona/[id] but buyer personas have their own detail page
+- ExpandableSection component pattern is reusable - same pattern used in persona page
+- Use Set<string> to track expanded sections state for multiple collapsible items
+
+---
+
+## 2026-01-22 - US-019: Create basic admin layout and middleware
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/admin/layout.tsx with admin navigation sidebar
+- Sidebar links: Dashboard, Users, Personas, Company Profiles
+- Updated src/lib/supabase/middleware.ts to fetch user role from public.users table
+- Added UserWithRole interface for role-aware auth checks
+- Updated src/middleware.ts to check for admin role on /admin routes
+- Non-admin users redirected to /dashboard?error=admin_required
+- Created placeholder admin page at src/app/admin/page.tsx (full implementation in US-020)
+- Admin sidebar uses Lucide icons: LayoutDashboard, Users, UserCircle, Building2, Shield
+
+### Files changed
+- src/lib/supabase/middleware.ts (modified - added UserWithRole interface and role fetch)
+- src/middleware.ts (modified - added admin route protection)
+- src/app/admin/layout.tsx (new)
+- src/app/admin/page.tsx (new)
+
+### Learnings for future iterations
+- Middleware needs to fetch user role from public.users since auth.users doesn't have role column
+- Use query params for error messages when redirecting (e.g., ?error=admin_required)
+- Admin layout uses flex with fixed sidebar (w-64) and flex-1 main content area
+- Sidebar pattern: dark bg-slate-900 with hover states on nav items
+- For exact route matching vs prefix matching, handle /admin differently from /admin/*
+
+---
+
+## 2026-01-22 - US-020: Create admin dashboard overview
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/admin/actions.ts with getAdminStats server action
+- Server action queries: total users, total personas, personas this week, B2C count, B2B count
+- Admin role verification before returning stats
+- Updated src/app/admin/page.tsx with stats cards UI
+- StatCard component with icon, title, value, optional subtitle
+- StatCardSkeleton for loading states
+- Stats grid showing: Total Users, Total Personas, Personas This Week, B2B vs B2C
+- Detailed breakdown section with persona type chart (progress bar)
+- Quick Stats section: Avg personas per user, Weekly growth rate, B2B adoption rate
+- Error state handling with red banner
+
+### Files changed
+- src/app/admin/actions.ts (new)
+- src/app/admin/page.tsx (modified - full implementation)
+
+### Learnings for future iterations
+- Use { count: 'exact', head: true } for Supabase count queries (no data returned, just count)
+- For date filtering in Supabase, use .gte('created_at', dateString) for "greater than or equal"
+- Admin server actions should verify role from public.users table before returning sensitive data
+- StatCard pattern: iconBgColor + iconColor props for consistent styling variation
+- Progress bar percentage calculation: (count / total) * 100 with Math.round for display
+
+---
+
+## 2026-01-22 - US-021: Create admin users list page
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/admin/users/page.tsx with users table
+- Table displays: email, name, role badge (Admin/User), free persona status badge, created date, persona count
+- Added getAdminUsers server action to src/app/admin/actions.ts with pagination and email search
+- Pagination component with previous/next navigation, shows "Showing X to Y of Z users"
+- Page size of 20 users per page
+- Search by email with case-insensitive partial matching (ilike)
+- RoleBadge component: purple for admin, gray for user with icons
+- BooleanBadge component: green "Used" or gray "Available" for free persona status
+- TableSkeleton component for loading state
+- Empty state when no users found or search has no results
+- Persona count shown in blue circular badge
+
+### Files changed
+- src/app/admin/actions.ts (modified - added getAdminUsers, AdminUserListItem, AdminUsersResponse)
+- src/app/admin/users/page.tsx (new)
+
+### Learnings for future iterations
+- Use Supabase .range(offset, offset + pageSize - 1) for pagination (0-indexed, inclusive)
+- Use .ilike('column', '%search%') for case-insensitive partial matching
+- Fetch persona counts separately and build Map<userId, count> for efficient lookup
+- Table skeleton pattern: use grid with animate-pulse for loading states
+- Pagination calculation: offset = (page - 1) * pageSize, totalPages = Math.ceil(total / pageSize)
+
+---
+
+## 2026-01-22 - US-022: Create admin personas list page
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/admin/personas/page.tsx with personas table
+- Added getAdminPersonas server action to src/app/admin/actions.ts
+- Table displays: persona name (linked to /persona/[id]), type badge, user email, business name, unlocked status, created date
+- Pagination with 20 items per page (same pattern as users page)
+- Filter by type: All, B2C, B2B (using FilterButton component)
+- TypeBadge component with distinct styling for b2c_individual (green), b2b_company (blue), b2b_buyer (purple)
+- UnlockedBadge component showing locked/unlocked status with appropriate icons
+- Server action fetches personas with type filter, joins user emails via separate query
+- Admin role verification before returning data
+
+### Files changed
+- src/app/admin/actions.ts (modified - added AdminPersonaListItem, AdminPersonasResponse, PersonaTypeFilter, getAdminPersonas)
+- src/app/admin/personas/page.tsx (new)
+
+### Learnings for future iterations
+- Persona name is derived from persona_data.name (for individuals) or company_profile.name (for companies), not a DB column
+- For filtering by multiple types, use .in('type', ['type1', 'type2']) with Supabase
+- FilterButton pattern: active state uses brand-blue bg with white text, inactive uses slate-100 bg
+- Admin pages follow consistent pattern: header, filter card, table card with pagination
+
+---
+
+## 2026-01-22 - US-023: Add sign out functionality
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/app/(auth)/signout/route.ts as a Next.js route handler
+- Route handler calls Supabase auth.signOut() which clears session cookies
+- Supports both POST and GET methods for flexibility
+- Redirects to home page after sign out using NextResponse.redirect
+- Updated src/components/header.tsx to use window.location.href = '/signout' instead of client-side signOut
+- Removed unused signOut from useAuth destructuring in header
+
+### Files changed
+- src/app/(auth)/signout/route.ts (new)
+- src/components/header.tsx (modified)
+
+### Learnings for future iterations
+- Route handlers in (auth) group work the same as API routes but with cleaner URL structure
+- Supabase server client's signOut() automatically clears session cookies via the setAll cookie handler
+- Using window.location.href for sign out provides a full page navigation that ensures clean state
+- Support both GET and POST on auth routes for flexibility (links vs forms)
+
+---
+
+## 2026-01-22 - US-024: Add loading and error states throughout
+Session: penelope-app/.ralph-moss/prds/penelope-auth
+
+### What was implemented
+- Created src/components/ui/loading-spinner.tsx with LoadingSpinner (sized sm/md/lg/xl) and PageLoading components
+- Created src/components/ui/error-message.tsx with ErrorMessage component (inline/default/page variants)
+- Added loading.tsx files for dashboard, admin, admin/users, admin/personas routes
+- Added error.tsx files for dashboard, admin, persona routes
+- Exported new components from src/components/ui/index.ts
+- All loading.tsx files use skeleton patterns matching their respective pages
+
+### Files changed
+- src/components/ui/loading-spinner.tsx (new)
+- src/components/ui/error-message.tsx (new)
+- src/components/ui/index.ts (modified)
+- src/app/dashboard/loading.tsx (new)
+- src/app/dashboard/error.tsx (new)
+- src/app/admin/loading.tsx (new)
+- src/app/admin/error.tsx (new)
+- src/app/admin/users/loading.tsx (new)
+- src/app/admin/personas/loading.tsx (new)
+- src/app/persona/[id]/error.tsx (new)
+
+### Learnings for future iterations
+- Next.js loading.tsx files provide automatic loading UI during route transitions
+- Next.js error.tsx files act as error boundaries for their route segment
+- Error.tsx must be client components ('use client') since they use useEffect and Button onClick handlers
+- Skeleton patterns should match the page layout closely for smooth visual transitions
+- The error prop in error.tsx has optional `digest` property for server error IDs
+- ErrorMessage component variants: inline (banner style), default (card style), page (full page)
 
 ---
