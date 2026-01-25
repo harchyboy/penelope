@@ -1,48 +1,130 @@
 import Link from 'next/link'
 import { ArrowRight, Users, Building2, MessageCircle, FileText, Sparkles, CheckCircle2 } from 'lucide-react'
-import { Button } from '@/components/ui'
+import { Button, Input } from '@/components/ui'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
+
+function PersonaPreviewCard() {
+  return (
+    <div
+      className="bg-white border border-slate-200 p-8 w-full max-w-md"
+      style={{ borderRadius: '40px' }}
+    >
+      {/* Avatar - Vector line art placeholder */}
+      <div className="w-20 h-20 mx-auto mb-6 rounded-full border-2 border-slate-300 flex items-center justify-center">
+        <svg className="w-12 h-12 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+        </svg>
+      </div>
+
+      {/* Label */}
+      <p
+        className="text-center font-bold text-slate-900 mb-1"
+        style={{ letterSpacing: '0.3em', fontSize: '0.75rem' }}
+      >
+        SARAH CHEN, 34
+      </p>
+
+      {/* Role */}
+      <p
+        className="text-center font-bold text-slate-500 mb-6"
+        style={{ letterSpacing: '0.3em', fontSize: '0.65rem' }}
+      >
+        BRAND MANAGER
+      </p>
+
+      {/* Quote */}
+      <p className="text-center text-slate-600 italic mb-8 text-sm">
+        &quot;I need data that justifies our creative direction without the jargon.&quot;
+      </p>
+
+      {/* Progress Bars */}
+      <div className="space-y-4">
+        {[
+          { label: 'DEPTH', value: 92 },
+          { label: 'ACTIONABILITY', value: 88 },
+          { label: 'ACCURACY', value: 95 },
+        ].map((bar) => (
+          <div key={bar.label}>
+            <div className="flex justify-between mb-1">
+              <span
+                className="text-xs font-medium text-slate-500"
+                style={{ letterSpacing: '0.1em' }}
+              >
+                {bar.label}
+              </span>
+              <span className="text-xs text-slate-400">{bar.value}%</span>
+            </div>
+            <div className="h-px bg-slate-200 relative">
+              <div
+                className="absolute h-px bg-brand-blue"
+                style={{ width: `${bar.value}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center space-y-6">
-            <div className="inline-flex items-center gap-2 bg-brand-blue/10 text-brand-blue px-4 py-2 rounded-full text-sm font-medium">
-              <Sparkles className="h-4 w-4" />
-              AI-Powered Customer Personas
-            </div>
-            
-            <h1 className="text-5xl md:text-6xl font-bold text-slate-900 leading-tight">
-              Know Your Audience,<br />
-              <span className="gradient-text">Upgrade Your Outputs</span>
-            </h1>
-            
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-              Meet Penelope, your AI expert in customer persona creation. 
-              Dive deep into your audience&apos;s needs and motivations to craft 
-              detailed personas that sharpen your marketing strategies.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/create">
-                <Button size="xl">
-                  Create Your First Persona Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
+      <section className="relative py-24 px-4 noise-overlay">
+        <div className="container mx-auto max-w-7xl relative z-10">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+            {/* Left Column: The Proposition */}
+            <div className="space-y-8">
+              <h1
+                className="text-5xl md:text-6xl font-extrabold text-slate-900 leading-tight"
+                style={{ letterSpacing: '-0.05em' }}
+              >
+                Know your customer better than they know themselves.
+              </h1>
+
+              <p className="text-xl text-slate-600 leading-relaxed">
+                Stop guessing. Generate deep, data-driven customer personas in 60 seconds.
+                We provide clarity over hype, helping you map your audience with scientific precision.
+              </p>
+
+              {/* Inline Form */}
+              <form
+                className="flex flex-col sm:flex-row gap-3"
+                action="/create"
+                method="GET"
+              >
+                <Input
+                  name="business_name"
+                  placeholder="Business Name"
+                  className="flex-1"
+                  required
+                />
+                <Input
+                  name="industry"
+                  placeholder="Industry"
+                  className="flex-1"
+                  required
+                />
+                <Button
+                  type="submit"
+                  className="whitespace-nowrap"
+                >
+                  CREATE MY FIRST PERSONA — FREE
                 </Button>
-              </Link>
-              <Link href="#how-it-works">
-                <Button variant="outline" size="xl">
-                  See How It Works
-                </Button>
-              </Link>
+              </form>
+
+              <p className="text-sm text-slate-500">
+                No credit card required
+              </p>
             </div>
-            
-            <p className="text-sm text-slate-500">
-              No credit card required • First persona is free
-            </p>
+
+            {/* Right Column: Persona Preview Card */}
+            <div className="flex justify-center lg:justify-end">
+              <PersonaPreviewCard />
+            </div>
           </div>
         </div>
       </section>

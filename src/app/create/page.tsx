@@ -18,18 +18,23 @@ function CreatePersonaWizard() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const initialType = searchParams.get('type') as 'b2c' | 'b2b' | null
-  
-  const [step, setStep] = useState<WizardStep>(initialType ? 'business' : 'type')
+  const initialBusinessName = searchParams.get('business_name') || ''
+  const initialIndustry = searchParams.get('industry') || ''
+
+  // Skip to business step if we have prefilled data from landing page
+  const hasPrefilledData = initialBusinessName || initialIndustry
+  const [step, setStep] = useState<WizardStep>(initialType || hasPrefilledData ? 'business' : 'type')
   const [personaType, setPersonaType] = useState<PersonaType | null>(
-    initialType === 'b2c' ? 'b2c_individual' : 
-    initialType === 'b2b' ? 'b2b_company' : null
+    initialType === 'b2c' ? 'b2c_individual' :
+    initialType === 'b2b' ? 'b2b_company' :
+    hasPrefilledData ? 'b2c_individual' : null  // Default to B2C if coming from landing form
   )
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   const [businessContext, setBusinessContext] = useState<BusinessContext>({
-    business_name: '',
-    business_sector: '',
+    business_name: initialBusinessName,
+    business_sector: initialIndustry,  // Map industry → business_sector
     price_point: 'similar',
     target_location: '',
     problem_solved: '',
