@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { PENELOPE_SYSTEM_PROMPT, PERSONA_GENERATION_PROMPT, COMPANY_PROFILE_PROMPT } from '@/lib/prompts'
-import type { PersonaType, BusinessContext, GeneratePersonaRequest } from '@/types'
+import type { PersonaType, BusinessContext, GeneratePersonaRequest, Persona } from '@/types'
 import { generateId } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/server'
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 })
 
-// In-memory storage for demo (replace with Supabase in production)
-const personaStore = new Map<string, any>()
+// In-memory storage for unauthenticated preview mode only
+// Authenticated users have their personas saved to Supabase
+const previewStore = new Map<string, Persona>()
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +26,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Check if user is authenticated
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const isAuthenticated = !!user
 
     // Format the business context for the prompt
     const contextString = formatBusinessContext(business_context, type)
@@ -47,8 +54,8 @@ export async function POST(request: NextRequest) {
     })
 
     // Extract the text response
-    const responseText = message.content[0].type === 'text' 
-      ? message.content[0].text 
+    const responseText = message.content[0].type === 'text'
+      ? message.content[0].text
       : ''
 
     // Parse the JSON response
@@ -69,36 +76,87 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate a unique ID for this persona
+    // If authenticated, save to Supabase
+    if (isAuthenticated) {
+      // For b2b_company type, also save to company_profiles table
+      let companyProfileId: string | null = null
+
+      if (type === 'b2b_company') {
+        const { data: savedCompanyProfile, error: companyProfileError } = await supabase
+          .from('company_profiles')
+          .insert({
+            user_id: user.id,
+            company_data: personaData, // CompanyProfile data
+          })
+          .select('id')
+          .single()
+
+        if (companyProfileError) {
+          console.error('Failed to save company profile to database:', companyProfileError)
+          return NextResponse.json(
+            { error: 'Failed to save company profile' },
+            { status: 500 }
+          )
+        }
+
+        companyProfileId = savedCompanyProfile.id
+      }
+
+      const { data: savedPersona, error: insertError } = await supabase
+        .from('personas')
+        .insert({
+          user_id: user.id,
+          type,
+          business_context,
+          persona_data: type === 'b2b_company' ? null : personaData,
+          company_profile: type === 'b2b_company' ? personaData : null,
+          company_id: company_id || null,
+          is_unlocked: false, // Default to locked, user can use free unlock
+          is_complete: true,
+        })
+        .select()
+        .single()
+
+      if (insertError) {
+        console.error('Failed to save persona to database:', insertError)
+        return NextResponse.json(
+          { error: 'Failed to save persona' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        persona_id: savedPersona.id,
+        persona_data: personaData,
+        is_preview: false, // Authenticated users get their persona saved
+        company_profile_id: companyProfileId, // Include for linking buyer personas
+      })
+    }
+
+    // Unauthenticated: store in memory for preview only
     const personaId = generateId()
-
-    // Determine if this is a preview (no user, or user hasn't registered)
-    // For now, all personas are previews until we implement auth
-    const isPreview = true // Will be based on user auth status
-
-    // Store the persona (in production, this goes to Supabase)
-    const persona = {
+    const persona: Persona = {
       id: personaId,
-      user_id: null, // Will be set when user registers
+      user_id: null,
       type,
       company_id: company_id || null,
-      name: personaData.name,
       business_context,
       persona_data: type === 'b2b_company' ? null : personaData,
       company_profile: type === 'b2b_company' ? personaData : null,
-      is_unlocked: !isPreview,
+      is_unlocked: false,
       is_complete: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
 
-    personaStore.set(personaId, persona)
+    previewStore.set(personaId, persona)
 
     return NextResponse.json({
       success: true,
       persona_id: personaId,
       persona_data: personaData,
-      is_preview: isPreview,
+      is_preview: true, // Unauthenticated users see preview only
     })
   } catch (error) {
     console.error('Error generating persona:', error)
@@ -147,17 +205,43 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const persona = personaStore.get(id)
+  // First check the preview store for unauthenticated previews
+  const previewPersona = previewStore.get(id)
+  if (previewPersona) {
+    return NextResponse.json({
+      success: true,
+      persona: previewPersona,
+      is_preview: true,
+    })
+  }
 
-  if (!persona) {
+  // Check if user is authenticated and try to fetch from database
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Query the persona from database
+  const { data: persona, error } = await supabase
+    .from('personas')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error || !persona) {
     return NextResponse.json(
       { error: 'Persona not found' },
       { status: 404 }
     )
   }
 
+  // Check if user owns this persona or if it's accessible
+  // For now, allow owner to see their own personas
+  const isOwner = user && persona.user_id === user.id
+  const isPreview = !isOwner
+
   return NextResponse.json({
     success: true,
     persona,
+    is_preview: isPreview,
+    is_owner: isOwner,
   })
 }

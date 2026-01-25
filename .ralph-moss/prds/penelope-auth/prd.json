@@ -15,7 +15,7 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Supabase packages already installed: @supabase/supabase-js, @supabase/ssr"
     },
     {
@@ -32,7 +32,7 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Schema should match existing types in src/types/index.ts"
     },
     {
@@ -48,7 +48,7 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Use Supabase SSR middleware pattern"
     },
     {
@@ -67,7 +67,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Use existing Button, Input, Card components from src/components/ui"
     },
     {
@@ -84,7 +84,7 @@
         "Typecheck passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -103,7 +103,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Use existing Button, Input, Card components"
     },
     {
@@ -119,7 +119,7 @@
         "Typecheck passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -135,7 +135,7 @@
         "Typecheck passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -153,7 +153,7 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Use Lucide icons for menu"
     },
     {
@@ -172,8 +172,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Dashboard page with personas grid, empty state, and free persona banner implemented"
     },
     {
       "id": "US-011",
@@ -189,8 +189,8 @@
         "Typecheck passes"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Server action implemented with B2B company profile linking for b2b_buyer personas"
     },
     {
       "id": "US-012",
@@ -206,8 +206,8 @@
         "Typecheck passes"
       ],
       "priority": 12,
-      "passes": false,
-      "notes": "Maintain backwards compatibility with unauthenticated preview flow"
+      "passes": true,
+      "notes": "Authenticated users saved to Supabase, unauthenticated stored in previewStore for session"
     },
     {
       "id": "US-013",
@@ -223,8 +223,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 13,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Persona page now fetches from Supabase via API, handles 404 properly, shows auth-aware unlock banners"
     },
     {
       "id": "US-014",
@@ -241,8 +241,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 14,
-      "passes": false,
-      "notes": "Free unlock = preview content only, not psychological depth"
+      "passes": true,
+      "notes": "Free unlock = preview content only, not psychological depth. Server action created with full validation and rollback on failure."
     },
     {
       "id": "US-015",
@@ -258,8 +258,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 15,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Registration CTA banner with redirect handling was already implemented. Updated banner text to match acceptance criteria."
     },
     {
       "id": "US-016",
@@ -274,8 +274,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 16,
-      "passes": false,
-      "notes": "B2B company profiles already partially implemented in types"
+      "passes": true,
+      "notes": "Generation API saves to company_profiles table with company_profile_id in response. Dashboard shows company profiles with CompanyProfileCard component."
     },
     {
       "id": "US-017",
@@ -291,8 +291,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 17,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Company profile page created with buyer persona listing. Buyer persona wizard with company context pre-fill. API saves to buyer_personas table."
     },
     {
       "id": "US-018",
@@ -308,8 +308,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 18,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Company profile page updated with expandable sections for all data (Business Model, Culture, Challenges, Goals, Buying Process, Technology). Buyer persona cards link to new detail page at /company/[id]/buyer/[buyerId] with full persona display."
     },
     {
       "id": "US-019",
@@ -324,8 +324,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 19,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Admin layout with sidebar created. Middleware fetches user role from public.users and redirects non-admin users to /dashboard?error=admin_required"
     },
     {
       "id": "US-020",
@@ -340,8 +340,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 20,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Admin dashboard with stats cards, type breakdown, and quick stats implemented. Server action fetches total users, personas, weekly growth, B2B/B2C counts."
     },
     {
       "id": "US-021",
@@ -357,8 +357,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 21,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Admin users page with table, pagination, email search, role badges, and persona counts implemented."
     },
     {
       "id": "US-022",
@@ -374,8 +374,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 22,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Admin personas page with table, pagination, type filter (All/B2C/B2B), TypeBadge and UnlockedBadge components, links to persona detail pages."
     },
     {
       "id": "US-023",
@@ -390,8 +390,8 @@
         "Typecheck passes"
       ],
       "priority": 23,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Route handler created at (auth)/signout/route.ts, header updated to call /signout route"
     },
     {
       "id": "US-024",
@@ -407,8 +407,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 24,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created LoadingSpinner, PageLoading, and ErrorMessage components. Added loading.tsx for dashboard, admin, admin/users, admin/personas. Added error.tsx for dashboard, admin, persona routes."
     }
   ]
 }

@@ -10,15 +10,50 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Hartz AI Brand Colors (from the PDF)
+        // CSS variable-based colors (for shadcn/ui compatibility)
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        // Hartz AI Official Brand Colors
+        'hartz-sky-blue': '#4A90E2',        // Primary - trust, clarity, intelligence
+        'hartz-growth-green': '#7CB342',    // Secondary - empowerment, growth
+        'hartz-confidence-coral': '#FF6F61', // Accent - achievement, energy (use sparingly)
+        'hartz-warm-amber': '#FFB74D',      // Optional accent - warmth, optimism
+        'hartz-charcoal': '#37474F',        // Primary text
+        'hartz-warm-grey': '#B0BEC5',       // Secondary text, borders
+        'hartz-light-grey': '#ECEFF1',      // Backgrounds
+        'hartz-off-white': '#FAFAFA',       // Cards, panels
+        // Legacy brand colors (for backwards compatibility)
         brand: {
-          blue: '#3B82A0',      // Primary blue from slides
-          orange: '#E88B4D',    // Accent orange
-          dark: '#1A1A2E',      // Dark background
-          light: '#F8F9FA',     // Light background
+          blue: '#4A90E2',
+          green: '#7CB342',
+          coral: '#FF6F61',
+          orange: '#E88B4D',
+          dark: '#37474F',
+          light: '#FAFAFA',
         },
         // Semantic colors
         primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
           50: '#f0f9ff',
           100: '#e0f2fe',
           200: '#bae6fd',
@@ -30,7 +65,13 @@ const config: Config = {
           800: '#0f3a4c',
           900: '#082230',
         },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
         accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
           50: '#fff7ed',
           100: '#ffedd5',
           200: '#fed7aa',
@@ -42,6 +83,11 @@ const config: Config = {
           800: '#9a3412',
           900: '#7c2d12',
         },
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

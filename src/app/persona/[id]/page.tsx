@@ -3,45 +3,69 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  ArrowLeft, 
-  Download, 
-  MessageCircle, 
-  Lock, 
+import {
+  ArrowLeft,
+  Download,
+  MessageCircle,
+  Lock,
   Unlock,
   User,
   Heart,
   Brain,
   ShoppingCart,
-  Users,
   Sparkles,
   ChevronDown,
   ChevronUp,
-  Building2
+  Building2,
+  CheckCircle2
 } from 'lucide-react'
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
+import { useAuth } from '@/components/providers/auth-provider'
+import { unlockFreePersona } from './actions'
 import type { Persona, PersonaData, CompanyProfile } from '@/types'
+
+interface PersonaApiResponse {
+  success: boolean
+  persona: Persona
+  is_preview: boolean
+  is_owner: boolean
+}
 
 export default function PersonaPage() {
   const params = useParams()
   const router = useRouter()
+  const { user, isAuthenticated, isLoading: authLoading, refreshUser } = useAuth()
   const [persona, setPersona] = useState<Persona | null>(null)
+  const [isOwner, setIsOwner] = useState(false)
+  const [isPreview, setIsPreview] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [is404, setIs404] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['basic']))
+  const [unlockLoading, setUnlockLoading] = useState(false)
+  const [unlockError, setUnlockError] = useState<string | null>(null)
+  const [unlockSuccess, setUnlockSuccess] = useState(false)
 
   useEffect(() => {
     async function fetchPersona() {
       try {
         const response = await fetch(`/api/generate-persona?id=${params.id}`)
         const data = await response.json()
-        
+
+        if (response.status === 404) {
+          setIs404(true)
+          return
+        }
+
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch persona')
         }
-        
-        setPersona(data.persona)
+
+        const apiResponse = data as PersonaApiResponse
+        setPersona(apiResponse.persona)
+        setIsOwner(apiResponse.is_owner ?? false)
+        setIsPreview(apiResponse.is_preview ?? true)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Something went wrong')
       } finally {
@@ -66,7 +90,35 @@ export default function PersonaPage() {
     })
   }
 
-  if (loading) {
+  const handleFreeUnlock = async () => {
+    if (!params.id || typeof params.id !== 'string') return
+
+    setUnlockLoading(true)
+    setUnlockError(null)
+    setUnlockSuccess(false)
+
+    try {
+      const result = await unlockFreePersona(params.id)
+
+      if (result.success) {
+        setUnlockSuccess(true)
+        // Refresh user data to update free_persona_used status
+        await refreshUser()
+        // Update local persona state to reflect unlock
+        if (persona) {
+          setPersona({ ...persona, is_unlocked: true })
+        }
+      } else {
+        setUnlockError(result.error || 'Failed to unlock persona')
+      }
+    } catch (err) {
+      setUnlockError('An unexpected error occurred. Please try again.')
+    } finally {
+      setUnlockLoading(false)
+    }
+  }
+
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -79,14 +131,52 @@ export default function PersonaPage() {
     )
   }
 
+  // 404 - Persona not found
+  if (is404) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center space-y-6 p-8">
+          <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center mx-auto">
+            <User className="h-10 w-10 text-slate-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Persona Not Found</h1>
+            <p className="text-slate-600">
+              This persona doesn&apos;t exist or you don&apos;t have permission to view it.
+            </p>
+          </div>
+          <div className="flex gap-4 justify-center">
+            <Link href="/create">
+              <Button>Create a New Persona</Button>
+            </Link>
+            {isAuthenticated && (
+              <Link href="/dashboard">
+                <Button variant="outline">Go to Dashboard</Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (error || !persona) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-red-600">{error || 'Persona not found'}</p>
-          <Link href="/create">
-            <Button>Create a New Persona</Button>
-          </Link>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center space-y-6 p-8">
+          <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+            <Sparkles className="h-10 w-10 text-red-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Something Went Wrong</h1>
+            <p className="text-red-600">{error || 'Failed to load persona'}</p>
+          </div>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+            <Link href="/create">
+              <Button variant="outline">Create a New Persona</Button>
+            </Link>
+          </div>
         </div>
       </div>
     )
@@ -135,25 +225,65 @@ export default function PersonaPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Unlock Banner */}
-        {!isUnlocked && (
+        {/* Success Message after unlocking */}
+        {unlockSuccess && (
+          <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <p className="text-green-800">
+              Your persona has been unlocked! You now have access to the full preview content.
+            </p>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {unlockError && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-red-800">{unlockError}</p>
+          </div>
+        )}
+
+        {/* Unlock Banner - Shows different CTAs based on auth state */}
+        {!isUnlocked && !unlockSuccess && (
           <div className="mb-8 p-6 bg-gradient-to-r from-brand-blue to-brand-blue/80 rounded-xl text-white">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
                   <Lock className="h-6 w-6" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">Preview Mode</h3>
-                  <p className="text-white/80">Register for free to unlock your first full persona</p>
+                  <p className="text-white/80">
+                    {!isAuthenticated
+                      ? 'Register to save this persona and unlock one for free'
+                      : isOwner && !user?.free_persona_used
+                        ? 'Use your free unlock to see the full persona'
+                        : 'Upgrade to unlock the full persona insights'}
+                  </p>
                 </div>
               </div>
-              <Link href="/register">
-                <Button variant="accent">
+              {!isAuthenticated ? (
+                <Link href={`/register?redirect=/persona/${params.id}`}>
+                  <Button variant="accent">
+                    <User className="mr-2 h-4 w-4" />
+                    Register to Unlock
+                  </Button>
+                </Link>
+              ) : isOwner && !user?.free_persona_used ? (
+                <Button
+                  variant="accent"
+                  onClick={handleFreeUnlock}
+                  isLoading={unlockLoading}
+                  disabled={unlockLoading}
+                >
                   <Unlock className="mr-2 h-4 w-4" />
-                  Unlock Full Persona
+                  {unlockLoading ? 'Unlocking...' : 'Use Free Unlock'}
                 </Button>
-              </Link>
+              ) : (
+                <Button variant="accent" disabled>
+                  <Lock className="mr-2 h-4 w-4" />
+                  Upgrade Required
+                </Button>
+              )}
             </div>
           </div>
         )}
