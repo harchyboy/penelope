@@ -32,24 +32,30 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // Premium Editorial Brand Colors
-        'brand-teal': '#3498A3',           // Primary teal
-        'brand-teal-dark': '#2a7a86',      // Darker teal for hover/gradients
-        'brand-coral': '#E87D4E',          // Coral/orange for CTAs
-        'brand-coral-dark': '#d66a3d',     // Darker coral for hover
-        'brand-dark': '#1a2a3a',           // Dark navy for headings
-        'brand-dark-lighter': '#2c3e50',   // Lighter dark for gradients
-        'gray-text': '#6b7c8c',            // Body text gray
-        'light-bg': '#F8FAFB',             // Light background
+        // Hartz AI Design System
+        'hartz-blue': '#4A90E2',
+        'hartz-black': '#0A0A0A',
+        'hartz-gray': '#F8F8F8',
+        'hartz-muted': '#666666',
+        'hartz-border': 'rgba(0,0,0,0.08)',
+        // Premium Editorial Brand Colors (used by dashboard, create, etc.)
+        'brand-teal': '#3498A3',
+        'brand-teal-dark': '#2a7a86',
+        'brand-coral': '#E87D4E',
+        'brand-coral-dark': '#d66a3d',
+        'brand-dark': '#1a2a3a',
+        'brand-dark-lighter': '#2c3e50',
+        'gray-text': '#6b7c8c',
+        'light-bg': '#F8FAFB',
         // Legacy hartz colors (for backward compatibility with other components)
-        'hartz-sky-blue': '#3498A3',       // Map to teal
-        'hartz-growth-green': '#3498A3',   // Map to teal (removing green)
-        'hartz-confidence-coral': '#E87D4E', // Map to coral
-        'hartz-warm-amber': '#E87D4E',     // Map to coral
-        'hartz-charcoal': '#1a2a3a',       // Map to brand-dark
-        'hartz-warm-grey': '#6b7c8c',      // Map to gray-text
-        'hartz-light-grey': '#e8eef2',     // Subtle border gray
-        'hartz-off-white': '#F8FAFB',      // Map to light-bg
+        'hartz-sky-blue': '#3498A3',
+        'hartz-growth-green': '#3498A3',
+        'hartz-confidence-coral': '#E87D4E',
+        'hartz-warm-amber': '#E87D4E',
+        'hartz-charcoal': '#1a2a3a',
+        'hartz-warm-grey': '#6b7c8c',
+        'hartz-light-grey': '#e8eef2',
+        'hartz-off-white': '#F8FAFB',
         // Legacy brand colors (for backwards compatibility)
         brand: {
           teal: '#3498A3',
@@ -97,10 +103,12 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
         'xl': '18px',
         '2xl': '24px',
+        '3xl': '32px',
+        '4xl': '48px',
       },
       fontFamily: {
-        sans: ['var(--font-dm-sans)', 'DM Sans', 'system-ui', 'sans-serif'],
-        display: ['var(--font-dm-sans)', 'DM Sans', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'Inter', 'var(--font-dm-sans)', 'DM Sans', 'system-ui', 'sans-serif'],
+        display: ['var(--font-inter)', 'Inter', 'var(--font-dm-sans)', 'DM Sans', 'system-ui', 'sans-serif'],
         serif: ['var(--font-source-serif)', 'Source Serif 4', 'Georgia', 'serif'],
       },
       boxShadow: {
@@ -108,6 +116,9 @@ const config: Config = {
         'soft-lg': '0 25px 50px rgba(0,0,0,0.05)',
         'glow-teal': '0 10px 40px rgba(52,152,163,0.15)',
         'glow-coral': '0 10px 40px rgba(232,125,78,0.25)',
+        'bento': '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
+        'bento-hover': '0 4px 16px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.04)',
+        'bento-lg': '0 8px 24px rgba(0,0,0,0.06), 0 20px 48px rgba(0,0,0,0.04)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

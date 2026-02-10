@@ -1,8 +1,14 @@
 import type { Metadata } from 'next'
-import { DM_Sans, Source_Serif_4 } from 'next/font/google'
+import { Inter, DM_Sans, Source_Serif_4 } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { Header } from '@/components/header'
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -42,10 +48,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${sourceSerif.variable}`}>
-      <body className={dmSans.className}>
+    <html lang="en" className={`${inter.variable} ${dmSans.variable} ${sourceSerif.variable}`}>
+      <body className={inter.className}>
         <AuthProvider>
-          <div className="min-h-screen bg-light-bg">
+          <div className="min-h-screen bg-hartz-gray">
             <Header />
             {children}
           </div>

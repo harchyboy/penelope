@@ -29,15 +29,15 @@ export function Header() {
   const displayName = user?.name || user?.email?.split('@')[0] || 'User'
 
   return (
-    <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b border-black/[0.06] bg-white/80 backdrop-blur-xl sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-blue to-brand-orange flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-hartz-blue flex items-center justify-center">
             <span className="text-white font-bold text-lg">P</span>
           </div>
-          <span className="font-semibold text-xl text-slate-900">Penelope</span>
-          <span className="text-xs text-slate-500 ml-1 hidden sm:inline">by Hartz AI</span>
+          <span className="font-semibold text-xl text-hartz-black">Penelope</span>
+          <span className="text-xs text-hartz-muted ml-1 hidden sm:inline">by Hartz AI</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -47,8 +47,8 @@ export function Header() {
             className={cn(
               "text-sm transition-colors",
               pathname === '/pricing'
-                ? "text-slate-900 font-medium"
-                : "text-slate-600 hover:text-slate-900"
+                ? "text-hartz-black font-medium"
+                : "text-hartz-muted hover:text-hartz-black"
             )}
           >
             Pricing
@@ -57,8 +57,8 @@ export function Header() {
           {isLoading ? (
             // Loading skeleton
             <div className="flex items-center gap-4">
-              <div className="h-9 w-16 bg-slate-200 animate-pulse rounded-lg" />
-              <div className="h-9 w-28 bg-slate-200 animate-pulse rounded-lg" />
+              <div className="h-9 w-16 bg-gray-200 animate-pulse rounded-full" />
+              <div className="h-9 w-28 bg-gray-200 animate-pulse rounded-full" />
             </div>
           ) : isAuthenticated ? (
             // Authenticated state
@@ -69,7 +69,7 @@ export function Header() {
                   Dashboard
                 </Button>
               </Link>
-              <div className="flex items-center gap-2 text-sm text-slate-600">
+              <div className="flex items-center gap-2 text-sm text-hartz-muted">
                 <User className="h-4 w-4" />
                 <span className="max-w-32 truncate">{displayName}</span>
               </div>
@@ -85,13 +85,13 @@ export function Header() {
                 <Button variant="ghost" size="sm">Sign In</Button>
               </Link>
               <Link href="/register">
-                <Button variant="secondary" size="sm">Register</Button>
+                <Button variant="ghost" size="sm">Register</Button>
               </Link>
               <Link href="/create">
-                <Button size="sm">
+                <button className="px-5 py-2 bg-hartz-blue text-white rounded-full font-medium text-sm hover:bg-hartz-blue/90 transition-all">
                   Create Persona
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                  <ArrowRight className="inline ml-2 h-4 w-4" />
+                </button>
               </Link>
             </>
           )}
@@ -100,7 +100,7 @@ export function Header() {
         {/* Mobile Menu Button */}
         <button
           type="button"
-          className="md:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+          className="md:hidden p-2 text-hartz-muted hover:text-hartz-black hover:bg-gray-100 rounded-lg transition-colors"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
         >
@@ -114,15 +114,15 @@ export function Header() {
 
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white">
+        <div className="md:hidden border-t border-black/[0.06] bg-white">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-2">
             <Link
               href="/pricing"
               className={cn(
                 "px-4 py-2 text-sm rounded-lg transition-colors",
                 pathname === '/pricing'
-                  ? "bg-slate-100 text-slate-900 font-medium"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-hartz-gray text-hartz-black font-medium"
+                  : "text-hartz-muted hover:bg-hartz-gray hover:text-hartz-black"
               )}
               onClick={closeMobileMenu}
             >
@@ -131,19 +131,19 @@ export function Header() {
 
             {isLoading ? (
               <div className="px-4 py-2">
-                <div className="h-5 w-24 bg-slate-200 animate-pulse rounded" />
+                <div className="h-5 w-24 bg-gray-200 animate-pulse rounded" />
               </div>
             ) : isAuthenticated ? (
               <>
                 {/* User info */}
-                <div className="px-4 py-2 flex items-center gap-2 text-sm text-slate-600 border-t border-slate-100 mt-2 pt-4">
+                <div className="px-4 py-2 flex items-center gap-2 text-sm text-hartz-muted border-t border-black/[0.06] mt-2 pt-4">
                   <User className="h-4 w-4" />
                   <span className="truncate">{displayName}</span>
                 </div>
 
                 <Link
                   href="/dashboard"
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 text-sm text-hartz-muted hover:bg-hartz-gray hover:text-hartz-black rounded-lg transition-colors flex items-center gap-2"
                   onClick={closeMobileMenu}
                 >
                   <LayoutDashboard className="h-4 w-4" />
@@ -152,7 +152,7 @@ export function Header() {
 
                 <button
                   type="button"
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors flex items-center gap-2 w-full text-left"
+                  className="px-4 py-2 text-sm text-hartz-muted hover:bg-hartz-gray hover:text-hartz-black rounded-lg transition-colors flex items-center gap-2 w-full text-left"
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4" />
@@ -163,24 +163,24 @@ export function Header() {
               <>
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm text-hartz-muted hover:bg-hartz-gray hover:text-hartz-black rounded-lg transition-colors"
                   onClick={closeMobileMenu}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm text-hartz-muted hover:bg-hartz-gray hover:text-hartz-black rounded-lg transition-colors"
                   onClick={closeMobileMenu}
                 >
                   Register
                 </Link>
-                <div className="pt-2 border-t border-slate-100 mt-2">
+                <div className="pt-2 border-t border-black/[0.06] mt-2">
                   <Link href="/create" onClick={closeMobileMenu}>
-                    <Button className="w-full">
+                    <button className="w-full px-5 py-3 bg-hartz-blue text-white rounded-full font-semibold hover:bg-hartz-blue/90 transition-all">
                       Create Persona
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                      <ArrowRight className="inline ml-2 h-4 w-4" />
+                    </button>
                   </Link>
                 </div>
               </>
