@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Users, Building2, MessageCircle, FileText, Sparkles, CheckCircle2, Star, TrendingUp, Clock, Brain, Heart } from 'lucide-react'
+import { ArrowRight, Users, Building2, MessageCircle, FileText, Sparkles, CheckCircle2, Star, TrendingUp, Clock, Brain, Heart, FlaskConical, BookOpen, ShieldCheck, Microscope } from 'lucide-react'
 
 interface PersonaVisualizationProps {
   isAnimated: boolean
@@ -182,7 +182,7 @@ export default function HomePage() {
               </h1>
 
               <p className="text-lg lg:text-xl text-hartz-muted leading-relaxed">
-                No more guessing. No more generic profiles. Create psychologically-nuanced customer personas in 60 seconds that actually help you sell.
+                Not a generic chatbot. Penelope is a specialist AI trained on peer-reviewed neuroscience, behavioural psychology, and consumer research to create personas with real scientific depth.
               </p>
 
               {/* Inline Form Card */}
@@ -310,8 +310,96 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Science-Backed Section */}
+      <section className="py-20 px-4 bg-hartz-gray">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-14">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-hartz-blue block mb-3">
+              Beyond Generic AI
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold text-hartz-black mb-4">
+              This isn&apos;t ChatGPT with a persona prompt
+            </h2>
+            <p className="text-lg text-hartz-muted max-w-3xl mx-auto">
+              Anyone can ask ChatGPT to &ldquo;create a buyer persona.&rdquo; You&apos;ll get a flat, generic profile that could apply to any business. Penelope is fundamentally different.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-12">
+            {/* What ChatGPT gives you */}
+            <div className="bg-white rounded-3xl p-8 border border-black/[0.08] shadow-bento">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-hartz-muted" />
+                </div>
+                <h3 className="text-lg font-semibold text-hartz-muted">Generic AI chatbot</h3>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  'Surface-level demographics (age, location, job title)',
+                  'Generic pain points anyone could guess',
+                  'No scientific methodology behind the output',
+                  'Same template regardless of industry',
+                  'No understanding of cognitive biases or decision science',
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-hartz-muted">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                    <span className="text-sm">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* What Penelope gives you */}
+            <div className="bg-white rounded-3xl p-8 border-2 border-hartz-blue/20 shadow-bento relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-hartz-blue/[0.04] rounded-full blur-[60px]" />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-hartz-blue/10 flex items-center justify-center">
+                    <FlaskConical className="w-5 h-5 text-hartz-blue" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-hartz-black">Penelope</h3>
+                </div>
+                <ul className="space-y-3">
+                  {[
+                    'Trained on peer-reviewed neuroscience and behavioural psychology',
+                    'Applies Kahneman\'s dual-process theory, loss aversion, and cognitive bias frameworks',
+                    'Uses academic consumer behaviour models (not marketing fluff)',
+                    'MBTI, Enneagram, and psychographic profiling grounded in research',
+                    'Generates messaging strategies based on proven persuasion science',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-hartz-blue flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-hartz-black">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Research foundations */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { icon: Microscope, label: 'Neuroscience', desc: 'How the brain makes buying decisions' },
+              { icon: Brain, label: 'Behavioural Psychology', desc: 'Cognitive biases and decision heuristics' },
+              { icon: BookOpen, label: 'Academic Journals', desc: 'Peer-reviewed consumer research' },
+              { icon: ShieldCheck, label: 'Proven Frameworks', desc: 'MBTI, Enneagram, Big Five validated models' },
+            ].map((item) => (
+              <div key={item.label} className="bg-white rounded-2xl p-5 border border-black/[0.08] shadow-bento text-center">
+                <div className="w-10 h-10 rounded-xl bg-hartz-blue/10 flex items-center justify-center mx-auto mb-3">
+                  <item.icon className="w-5 h-5 text-hartz-blue" />
+                </div>
+                <h4 className="text-sm font-semibold text-hartz-black mb-1">{item.label}</h4>
+                <p className="text-xs text-hartz-muted">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-16 px-4 bg-hartz-gray">
+      <section id="how-it-works" className="py-16 px-4 bg-white">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-hartz-blue block mb-3">
@@ -335,8 +423,8 @@ export default function HomePage() {
               },
               {
                 step: '02',
-                title: 'Penelope Creates Your Persona',
-                description: 'Using advanced AI and consumer psychology, Penelope crafts a detailed, multi-dimensional persona.',
+                title: 'Penelope Analyses the Science',
+                description: 'Drawing on neuroscience research, behavioural psychology, and consumer decision science to build a multi-dimensional persona.',
                 icon: Sparkles,
               },
               {
@@ -368,52 +456,52 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="use-cases" className="py-16 px-4 bg-white">
+      <section id="use-cases" className="py-16 px-4 bg-hartz-gray">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-hartz-blue block mb-3">
-              Why Choose Us
+              Research-Driven Features
             </span>
             <h2 className="text-3xl font-bold text-hartz-black mb-4">
-              What Makes Penelope Different
+              Every Feature Backed by Science
             </h2>
             <p className="text-lg text-hartz-muted">
-              Powered by neuromarketing, consumer psychology, and advanced AI
+              Not opinions. Not guesses. Insights grounded in published research.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
-                title: 'Psychological Depth',
-                description: 'Goes beyond demographics to uncover fears, desires, and hidden contradictions.',
+                title: 'Cognitive Bias Mapping',
+                description: 'Identifies which of Kahneman\'s cognitive biases your customer is most susceptible to, so you can frame your offer accordingly.',
               },
               {
-                title: 'MBTI & Enneagram Analysis',
-                description: 'Understand personality types and how they influence buying behavior.',
+                title: 'MBTI & Enneagram Profiling',
+                description: 'Validated personality frameworks applied to your specific customer, revealing how they process information and make decisions.',
               },
               {
-                title: 'Actionable Insights',
-                description: 'Every insight is designed to be immediately useful for marketing and sales.',
+                title: 'Neuroscience-Based Messaging',
+                description: 'Generates copy angles based on how the brain actually responds to persuasion\u2014not marketing hunches.',
               },
               {
-                title: 'Chat with Penelope',
-                description: 'Ask follow-up questions and dive deeper into any aspect of your persona.',
+                title: 'Conversational Deep-Dives',
+                description: 'Chat with Penelope to explore any dimension of your persona. Ask "why do they hesitate?" and get a science-backed answer.',
               },
               {
-                title: 'Professional PDF Export',
-                description: 'Download beautiful, shareable PDF reports for your team or clients.',
+                title: 'Professional PDF Reports',
+                description: 'Export comprehensive persona documents your entire team can use\u2014from strategy to creative to sales.',
               },
               {
-                title: 'B2B & B2C Support',
-                description: 'Create individual personas or complete company profiles with buyer maps.',
+                title: 'B2B Buying Committee Maps',
+                description: 'Model complex B2B decisions with multiple stakeholders, each with their own psychological profile and influence dynamics.',
               },
             ].map((feature) => (
               <div key={feature.title} className="bg-white rounded-3xl p-6 border border-black/[0.08] shadow-bento hover:shadow-bento-hover transition-all duration-300">
                 <h3 className="text-lg font-semibold text-hartz-black mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-hartz-muted">
+                <p className="text-hartz-muted text-sm leading-relaxed">
                   {feature.description}
                 </p>
               </div>
