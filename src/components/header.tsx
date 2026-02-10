@@ -32,12 +32,14 @@ export function Header() {
     <header className="border-b border-black/[0.06] bg-white/80 backdrop-blur-xl sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" onClick={closeMobileMenu}>
-          <div className="w-10 h-10 rounded-full bg-hartz-blue flex items-center justify-center">
-            <span className="text-white font-bold text-lg">P</span>
-          </div>
-          <span className="font-semibold text-xl text-hartz-black">Penelope</span>
-          <span className="text-xs text-hartz-muted ml-1 hidden sm:inline">by Hartz AI</span>
+        <Link href="/" className="flex items-center gap-3" onClick={closeMobileMenu}>
+          <img
+            src="https://cdn.sanity.io/images/2fyt2dgc/production/bd7decfada54f3a71e0dda8ad16885db4086403d-1500x455.png"
+            alt="Hartz AI"
+            className="h-8 w-auto"
+          />
+          <span className="text-hartz-muted text-sm font-medium hidden sm:inline">|</span>
+          <span className="font-semibold text-lg text-hartz-black hidden sm:inline">Penelope</span>
         </Link>
 
         {/* Desktop Navigation */}
