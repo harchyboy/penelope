@@ -449,28 +449,84 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 bg-hartz-black">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-hartz-blue flex items-center justify-center">
-                <span className="text-white font-bold text-sm">P</span>
-              </div>
-              <span className="font-semibold text-white">Penelope</span>
-              <span className="text-xs text-hartz-muted ml-1">by Hartz AI</span>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-hartz-muted">
-              <Link href="/privacy" className="hover:text-white transition-colors">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="hover:text-white transition-colors">
-                Terms of Service
-              </Link>
-              <a href="https://hartzai.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                Hartz AI
+      <footer className="bg-hartz-black text-white">
+        <div className="max-w-7xl mx-auto px-6 py-16 md:py-20">
+          {/* Main Footer Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 lg:gap-12">
+            {/* Logo & Contact Column */}
+            <div className="col-span-2">
+              <a href="https://hartzai.com" target="_blank" rel="noopener noreferrer" className="inline-block mb-6">
+                <img
+                  src="/images/hartz-ai-logo-white.webp"
+                  alt="Hartz AI"
+                  className="h-24 w-auto"
+                />
               </a>
+              <p className="text-sm text-white/60 mb-6 max-w-xs">
+                Helping UK SMEs build confidence, clarity and capability with AI.
+              </p>
+              <div className="space-y-2 text-sm">
+                <a
+                  href="mailto:hello@hartzai.com"
+                  className="block text-white/80 hover:text-hartz-blue transition-colors"
+                >
+                  hello@hartzai.com
+                </a>
+                <a
+                  href="tel:+44(0)7957855638"
+                  className="block text-white/80 hover:text-hartz-blue transition-colors"
+                >
+                  +44 (0) 7957 855 638
+                </a>
+                <p className="text-white/60 text-xs mt-4">
+                  Wohl Enterprise Hub, 2b Redbourne Avenue, London N3 2BS
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-hartz-muted">
+
+            {/* Services */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">Services</h4>
+              <ul className="space-y-2">
+                <li><a href="https://hartzai.com/ai-training" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">AI Training & Academy</a></li>
+                <li><a href="https://hartzai.com/ai-consultancy-services" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">AI Consultancy</a></li>
+                <li><a href="https://hartzai.com/ai-implementation" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">AI Implementation</a></li>
+                <li><a href="https://hartzai.com/ai-governance-risk-services" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">AI Governance</a></li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">Resources</h4>
+              <ul className="space-y-2">
+                <li><a href="https://hartzai.com/resources/templates" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">Templates</a></li>
+                <li><a href="https://hartzai.com/case-studies" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">Case Studies</a></li>
+                <li><a href="https://hartzai.com/resources/webinars" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">Webinars</a></li>
+                <li><a href="https://hartzai.com/blog" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">Articles</a></li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">Company</h4>
+              <ul className="space-y-2">
+                <li><a href="https://hartzai.com/about/team" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">About Hartz AI</a></li>
+                <li><a href="https://hartzai.com/contact" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">Contact</a></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-widest text-white/40 mb-4">Legal</h4>
+              <ul className="space-y-2">
+                <li><a href="https://hartzai.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-hartz-blue transition-colors">Privacy Policy</a></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs text-white/40">
               &copy; {new Date().getFullYear()} Hartz AI. All rights reserved.
             </p>
           </div>
