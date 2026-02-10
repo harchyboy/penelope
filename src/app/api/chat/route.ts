@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { CHAT_SYSTEM_PROMPT } from '@/lib/prompts'
+import { PENELOPE_SYSTEM_PROMPT } from '@/lib/prompts/penelope-system-prompt'
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -24,8 +25,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Build the system prompt with persona context
-    const systemPrompt = CHAT_SYSTEM_PROMPT.replace(
+    // Build the chat-specific system prompt with persona context
+    const chatContext = CHAT_SYSTEM_PROMPT.replace(
       '{persona_data}',
       JSON.stringify(persona_data, null, 2)
     )
@@ -42,18 +43,33 @@ export async function POST(request: NextRequest) {
       },
     ]
 
-    // Call Claude API
+    // Call Claude API with prompt caching and extended thinking
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
-      system: systemPrompt,
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 8096,
+      thinking: {
+        type: 'enabled',
+        budget_tokens: 16000,
+      },
+      system: [
+        {
+          type: 'text',
+          text: PENELOPE_SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+        {
+          type: 'text',
+          text: chatContext,
+        },
+      ],
       messages,
     })
 
-    // Extract the text response
-    const responseText = response.content[0].type === 'text' 
-      ? response.content[0].text 
-      : ''
+    // Extract only text blocks, filtering out thinking blocks
+    const responseText = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map((block) => block.text)
+      .join('')
 
     return NextResponse.json({
       success: true,

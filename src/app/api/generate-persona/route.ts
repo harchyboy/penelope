@@ -40,11 +40,21 @@ export async function POST(request: NextRequest) {
       ? COMPANY_PROFILE_PROMPT.replace('{business_context}', contextString)
       : PERSONA_GENERATION_PROMPT.replace('{business_context}', contextString)
 
-    // Call Claude API
+    // Call Claude API with prompt caching and extended thinking
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      system: PENELOPE_SYSTEM_PROMPT,
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 8096,
+      thinking: {
+        type: 'enabled',
+        budget_tokens: 16000,
+      },
+      system: [
+        {
+          type: 'text',
+          text: PENELOPE_SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
       messages: [
         {
           role: 'user',
@@ -53,10 +63,11 @@ export async function POST(request: NextRequest) {
       ],
     })
 
-    // Extract the text response
-    const responseText = message.content[0].type === 'text'
-      ? message.content[0].text
-      : ''
+    // Extract only text blocks, filtering out thinking blocks
+    const responseText = message.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map((block) => block.text)
+      .join('')
 
     // Parse the JSON response
     let personaData
