@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "WebSearch",
+      "WebFetch(*)",
+      "mcp__Sanity__*",
+      "mcp__chrome-devtools__*",
+      "mcp__claude_ai_Bright_Data__*",
+      "Skill(*)"
+    ]
+  }
+}
