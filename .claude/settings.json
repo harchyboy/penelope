@@ -9,6 +9,15 @@
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/session_start.py\""
           }
         ]
+      },
+      {
+        "matcher": {},
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-start.sh"
+          }
+        ]
       }
     ],
     "SessionEnd": [
@@ -29,6 +38,17 @@
           {
             "type": "command",
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/pre_tool_use.py\""
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "tool_name": "Write|Edit|Bash"
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre-tool-use.sh"
           }
         ]
       }
@@ -73,6 +93,15 @@
           {
             "type": "command",
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/stop.py\""
+          }
+        ]
+      },
+      {
+        "matcher": {},
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-complete.sh"
           }
         ]
       }
@@ -132,5 +161,8 @@
         ]
       }
     ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   }
 }
