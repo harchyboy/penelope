@@ -1,0 +1,76 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/session_start.py\""
+      }
+    ],
+    "SessionEnd": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/session_end.py\""
+      }
+    ],
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/pre_tool_use.py\""
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/post_tool_use.py\""
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/post_tool_use_failure.py\""
+      }
+    ],
+    "Notification": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/notification.py\""
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/stop.py\""
+      }
+    ],
+    "SubagentStart": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/subagent_start.py\""
+      }
+    ],
+    "SubagentStop": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/subagent_stop.py\""
+      }
+    ],
+    "PreCompact": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/pre_compact.py\""
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/user_prompt_submit.py\""
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "type": "command",
+        "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/permission_request.py\""
+      }
+    ]
+  }
+}
