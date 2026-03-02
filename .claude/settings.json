@@ -122,6 +122,15 @@
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/subagent_start.py\""
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/subagent-start.sh"
+          }
+        ]
       }
     ],
     "SubagentStop": [
@@ -173,6 +182,15 @@
           {
             "type": "command",
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/permission_request.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/permission-request.sh"
           }
         ]
       }
