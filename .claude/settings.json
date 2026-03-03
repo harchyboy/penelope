@@ -49,6 +49,15 @@
             "command": "bash .claude/hooks/pre-tool-use.sh"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/pre_tool_use.py\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -69,6 +78,15 @@
             "command": "bash .claude/hooks/post-tool-use.sh"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/post_tool_use.py\""
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
@@ -80,6 +98,15 @@
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/post_tool_use_failure.py\""
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/post_tool_use_failure.py\""
+          }
+        ]
       }
     ],
     "Notification": [
@@ -89,6 +116,15 @@
           {
             "type": "command",
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/notification.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/notification.py\""
           }
         ]
       }
@@ -111,6 +147,15 @@
             "command": "bash .claude/hooks/subagent-start.sh"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/subagent_start.py\""
+          }
+        ]
       }
     ],
     "SubagentStop": [
@@ -120,6 +165,15 @@
           {
             "type": "command",
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/subagent_stop.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/subagent_stop.py\""
           }
         ]
       }
@@ -142,6 +196,15 @@
             "command": "bash .claude/hooks/pre-compact.sh"
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/pre_compact.py\""
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -151,6 +214,15 @@
           {
             "type": "command",
             "command": "python \"/c/Users/craig/Documents/Projects/hartz-command/scripts/hooks/user_prompt_submit.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/user_prompt_submit.py\""
           }
         ]
       }
@@ -171,6 +243,26 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/permission-request.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/permission_request.py\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"C:/Users/craig/Documents/Projects/hartz-command/scripts/hooks/stop.py\""
           }
         ]
       }
