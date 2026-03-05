@@ -42,3 +42,11 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+.vercel
+.env*.local
+# Hartz Claude Framework
+agent_logs/
+proof/
+.worktrees/
+.ralph_prompt_*

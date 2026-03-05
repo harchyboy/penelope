@@ -16,6 +16,11 @@
 #   --no-cost           Disable cost tracking
 #   --timeout <min>     Per-iteration timeout in minutes (default: 30)
 #   --telemetry         Write structured JSON logs to agent_logs/ralph-telemetry.jsonl
+#   --verify            Run independent verification after each story (generates proof packets)
+#   --verify-runtime    Include Playwright runtime verification (requires running dev server)
+#   --dev-cmd <cmd>     Dev server start command for runtime verification
+#   --dev-url <url>     Dev server URL (default: http://localhost:3000)
+#   --docker            Run Claude inside Docker container with network isolation
 #   --help              Show this help
 
 set -euo pipefail
@@ -35,6 +40,11 @@ TRACK_COST=true
 TOTAL_COST=0
 ITER_TIMEOUT=30
 TELEMETRY=false
+VERIFY=false
+VERIFY_RUNTIME=false
+DEV_CMD=""
+DEV_URL="http://localhost:3000"
+USE_DOCKER=false
 START_TIME=$(date +%s)
 STALE_LOCK_HOURS=2
 TELEMETRY_FILE="agent_logs/ralph-telemetry.jsonl"
@@ -59,6 +69,11 @@ while [[ $# -gt 0 ]]; do
     --no-cost)       TRACK_COST=false ;;
     --timeout)       ITER_TIMEOUT="$2"; shift ;;
     --telemetry)     TELEMETRY=true ;;
+    --verify)        VERIFY=true ;;
+    --verify-runtime) VERIFY_RUNTIME=true; VERIFY=true ;;
+    --dev-cmd)       DEV_CMD="$2"; shift ;;
+    --dev-url)       DEV_URL="$2"; shift ;;
+    --docker)        USE_DOCKER=true ;;
     --help)
       sed -n '2,21p' "$0"
       exit 0
@@ -111,40 +126,92 @@ emit_telemetry() {
   echo "{\"timestamp\": \"$timestamp\", \"event\": \"$event_type\", $fields}" >> "$TELEMETRY_FILE"
 }
 
-# ─── Helper: clean stale locks ──────────────────────────────────────────────
+# ─── Helper: pick next story ID from PRD ────────────────────────────────────
 
-clean_stale_locks() {
-  if [[ ! -d "current_tasks" ]]; then return; fi
+pick_next_story() {
+  local prd_file="$1"
+  node -e "
+    const prd = JSON.parse(require('fs').readFileSync('$prd_file', 'utf8'));
+    const pending = prd.userStories
+      .filter(s => !s.passes)
+      .sort((a, b) => (a.priority || 99) - (b.priority || 99));
+    if (pending.length > 0) console.log(pending[0].id);
+  " 2>/dev/null || echo ""
+}
+
+# ─── Helper: worktree management ────────────────────────────────────────────
+
+WORKTREE_DIR=".worktrees"
+
+create_worktree() {
+  local story_id="$1"
+  local branch_name="ralph/${story_id}"
+  local worktree_path="${WORKTREE_DIR}/${story_id}"
+
+  # Clean up if stale worktree exists
+  if [[ -d "$worktree_path" ]]; then
+    echo "  🧹 Cleaning stale worktree: $story_id" >&2
+    git worktree remove "$worktree_path" --force >/dev/null 2>&1 || rm -rf "$worktree_path"
+    git branch -D "$branch_name" >/dev/null 2>&1 || true
+  fi
+
+  mkdir -p "$WORKTREE_DIR"
+  git worktree add "$worktree_path" -b "$branch_name" HEAD >/dev/null 2>&1
+  echo "$worktree_path"
+}
+
+merge_worktree() {
+  local story_id="$1"
+  local branch_name="ralph/${story_id}"
+  local worktree_path="${WORKTREE_DIR}/${story_id}"
+  local main_branch
+  main_branch=$(git rev-parse --abbrev-ref HEAD)
+
+  # Check if the worktree branch has any commits ahead
+  if git log "${main_branch}..${branch_name}" --oneline 2>/dev/null | grep -q .; then
+    echo "  🔀 Merging worktree branch: $branch_name"
+    if git merge "$branch_name" --no-edit 2>/dev/null; then
+      echo "  ✅ Merge successful"
+    else
+      echo "  ⚠️  Merge conflict — keeping worktree branch for manual resolution"
+      git merge --abort 2>/dev/null || true
+      return 1
+    fi
+  else
+    echo "  ℹ️  No new commits in worktree"
+  fi
+
+  # Clean up
+  git worktree remove "$worktree_path" --force 2>/dev/null || rm -rf "$worktree_path"
+  git branch -D "$branch_name" 2>/dev/null || true
+  return 0
+}
+
+clean_stale_worktrees() {
+  if [[ ! -d "$WORKTREE_DIR" ]]; then return; fi
 
   local now
   now=$(date +%s)
   local threshold=$((STALE_LOCK_HOURS * 3600))
-  local cleaned=0
 
-  for lock_file in current_tasks/*.txt; do
-    [[ ! -f "$lock_file" ]] && continue
+  for wt_dir in "$WORKTREE_DIR"/*/; do
+    [[ ! -d "$wt_dir" ]] && continue
+    local story_id
+    story_id=$(basename "$wt_dir")
 
-    local file_age
-    file_age=$(node -e "
+    local dir_age
+    dir_age=$(node -e "
       const fs = require('fs');
-      const stat = fs.statSync('$lock_file');
+      const stat = fs.statSync('$wt_dir');
       console.log(Math.floor((Date.now() - stat.mtimeMs) / 1000));
     " 2>/dev/null || echo "0")
 
-    if [[ "$file_age" -gt "$threshold" ]]; then
-      local task_name
-      task_name=$(basename "$lock_file" .txt)
-      echo "  🧹 Removing stale lock: $task_name (${STALE_LOCK_HOURS}h+ old)"
-      rm -f "$lock_file"
-      cleaned=$((cleaned + 1))
+    if [[ "$dir_age" -gt "$threshold" ]]; then
+      echo "  🧹 Removing stale worktree: $story_id (${STALE_LOCK_HOURS}h+ old)"
+      git worktree remove "$wt_dir" --force 2>/dev/null || rm -rf "$wt_dir"
+      git branch -D "ralph/${story_id}" 2>/dev/null || true
     fi
   done
-
-  if [[ "$cleaned" -gt 0 ]]; then
-    git add current_tasks/ 2>/dev/null || true
-    git commit -m "chore: remove $cleaned stale task lock(s)" 2>/dev/null || true
-    git push 2>/dev/null || true
-  fi
 }
 
 # ─── Find PRD ────────────────────────────────────────────────────────────────
@@ -208,7 +275,7 @@ fi
 
 # ─── Ensure directories ──────────────────────────────────────────────────────
 
-mkdir -p agent_logs current_tasks
+mkdir -p agent_logs
 
 # ─── Build agent prompt ──────────────────────────────────────────────────────
 
@@ -226,17 +293,21 @@ build_iteration_prompt() {
     solutions_index=$(grep -h "^title:" docs/solutions/*.md 2>/dev/null | sed 's/title: //' | head -20 || true)
   fi
 
-  local current_tasks_list=""
-  if compgen -G "current_tasks/*.txt" > /dev/null 2>&1; then
-    current_tasks_list=$(cat current_tasks/*.txt 2>/dev/null | tr '\n' ', ' || true)
+  # Previous iteration context (if any)
+  local prev_context=""
+  if [[ "$ITERATION" -gt 1 ]] && [[ -n "${PREV_STORY_ID:-}" ]]; then
+    prev_context="Previous iteration worked on ${PREV_STORY_ID} (result: ${PREV_RESULT:-unknown}). Check PROGRESS.md for details."
   fi
 
   cat <<PROMPT
 # Ralph Loop — Autonomous Development Session
 
 ## Your objective
-Work through the PRD below, implementing one user story per session.
-Each story must be fully complete (tests passing, code committed) before you stop.
+Implement story **${STORY_ID:-next pending}** from the PRD below.
+The story must be fully complete (tests passing, code committed) before you stop.
+${prev_context:+
+## Previous iteration
+${prev_context}}
 
 ## Current project state
 
@@ -245,9 +316,6 @@ ${progress_content:-No PROGRESS.md found. Start by creating one.}
 
 ### Available learnings (docs/solutions/)
 ${solutions_index:-No solutions documented yet.}
-
-### Currently locked tasks (do NOT claim these)
-${current_tasks_list:-None locked.}
 
 ## PRD
 \`\`\`json
@@ -259,24 +327,21 @@ ${prd_content}
 1. **Read first**: Review PROGRESS.md, docs/CODE-STANDARDS.md, and docs/solutions/ for relevant context
 2. **Follow code standards**: docs/CODE-STANDARDS.md contains mandatory patterns — apply them during implementation, not after review
 3. **Check failed approaches**: Read docs/failed-approaches.md before attempting solutions
-4. **Pick a story**: Select the highest-priority story where \`passes: false\`
-   - Skip any story with a lock file in current_tasks/
-5. **Claim it**: Write \`[story-id] [title]\` to \`current_tasks/[story-id].txt\`
-   - \`git add current_tasks/ && git commit -m "claim: [story-id]" && git push\`
-   - If push fails: another agent claimed it — pick a different story
-6. **Implement**: Build the feature following docs/CODE-STANDARDS.md patterns
-7. **Test**: Run the quality gate: \`bash scripts/quality-gate.sh\`
+4. **Implement story ${STORY_ID:-"(highest priority with passes: false)"}**: Build the feature following docs/CODE-STANDARDS.md patterns
+5. **Test**: Run the quality gate: \`bash scripts/quality-gate.sh\`
    - Fix ALL failures before proceeding
-8. **Update PROGRESS.md**: Add what you did, what's next, any discoveries
-9. **Commit**: Use conventional commit format: \`feat: [description] (closes [story-id])\`
-10. **Update PRD**: Mark story \`passes: true\` in prd.json, commit that too
-11. **Release lock**: \`git rm current_tasks/[story-id].txt && git commit -m "release: [story-id]" && git push\`
-12. **Stop**: Exit after completing ONE story. The loop will restart for the next.
+6. **Update PROGRESS.md**: Add what you did, what's next, any discoveries
+7. **Commit**: Use conventional commit format: \`feat: [description] (closes ${STORY_ID:-[story-id]})\`
+8. **Update PRD**: Mark story \`passes: true\` in prd.json, commit that too
+9. **Stop**: Exit after completing ONE story. The loop will restart for the next.
+
+## Context management
+- If your context is getting large, update PROGRESS.md with your current findings before continuing
+- Keep commits small and frequent — one logical change per commit
 
 ## Rules
 - NEVER skip the quality gate
 - NEVER mark a story as passed without all acceptance criteria met
-- NEVER work on a locked task
 - If stuck after 3 attempts: document in docs/failed-approaches.md and pick a different story
 - Check docs/solutions/ before implementing any non-trivial pattern
 
@@ -294,6 +359,9 @@ echo "   Iteration timeout: ${ITER_TIMEOUT} minutes"
 echo "   Quality gate: $QUALITY_GATE"
 echo "   Review: $REVIEW"
 echo "   Telemetry: $TELEMETRY"
+echo "   Verification: $VERIFY"
+echo "   Docker: $USE_DOCKER"
+echo "   Worktrees: $WORKTREE_DIR"
 echo "   PRD: $PRD_DIR"
 echo ""
 
@@ -310,8 +378,8 @@ STORIES_COMPLETED=0
 while [[ $ITERATION -lt $MAX_ITERATIONS ]]; do
   ITERATION=$((ITERATION + 1))
 
-  # Clean stale locks before each iteration
-  clean_stale_locks
+  # Clean stale worktrees before each iteration
+  clean_stale_worktrees
 
   # Check if all stories are done
   remaining=$(count_pending "${PRD_DIR}/prd.json")
@@ -343,6 +411,22 @@ while [[ $ITERATION -lt $MAX_ITERATIONS ]]; do
   # Sync with remote
   git pull origin "$(git branch --show-current)" --rebase 2>/dev/null || true
 
+  # Pick next story and create worktree
+  STORY_ID=$(pick_next_story "${PRD_DIR}/prd.json")
+  if [[ -z "$STORY_ID" ]]; then
+    echo "  ℹ️  No pending stories found"
+    break
+  fi
+  echo "  📌 Target story: $STORY_ID"
+
+  WORKTREE_PATH=""
+  if git worktree list > /dev/null 2>&1; then
+    WORKTREE_PATH=$(create_worktree "$STORY_ID") || {
+      echo "  ⚠️  Worktree creation failed — running in main tree"
+      WORKTREE_PATH=""
+    }
+  fi
+
   COMMIT=$(git rev-parse --short=6 HEAD)
   LOG_FILE="agent_logs/iteration_${ITERATION}_${COMMIT}.log"
 
@@ -357,7 +441,11 @@ while [[ $ITERATION -lt $MAX_ITERATIONS ]]; do
   fi
 
   # Run Claude with timeout
-  echo "  🤖 Running Claude ($MODEL)..."
+  if [[ "$USE_DOCKER" == "true" ]]; then
+    echo "  🤖 Running Claude ($MODEL) in Docker..."
+  else
+    echo "  🤖 Running Claude ($MODEL)..."
+  fi
 
   CLAUDE_ARGS=(
     --dangerously-skip-permissions
@@ -365,46 +453,82 @@ while [[ $ITERATION -lt $MAX_ITERATIONS ]]; do
     --model "$MODEL"
   )
 
+  # Docker/worktree wrapper — runs Claude in the right context
+  run_claude() {
+    local work_dir="${WORKTREE_PATH:-$(pwd)}"
+
+    # Prevent "nested session" detection when launched from within Claude Code
+    unset CLAUDECODE 2>/dev/null || true
+
+    if [[ "$USE_DOCKER" == "true" ]]; then
+      local DOCKER_COMPOSE_FILE=""
+      for f in docker/docker-compose.yml .claude-framework/docker/docker-compose.yml; do
+        if [[ -f "$f" ]]; then DOCKER_COMPOSE_FILE="$f"; break; fi
+      done
+      if [[ -z "$DOCKER_COMPOSE_FILE" ]]; then
+        echo "  ⚠️  Docker compose file not found — falling back to direct execution"
+        (cd "$work_dir" && claude "${CLAUDE_ARGS[@]}")
+        return $?
+      fi
+      WORKSPACE="$work_dir" PROMPT="$(cat /tmp/ralph_prompt_$$.md)" \
+        docker compose -f "$DOCKER_COMPOSE_FILE" run --rm \
+        -e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
+        agent \
+        --dangerously-skip-permissions \
+        -p "$(cat /tmp/ralph_prompt_$$.md)" \
+        --model "$MODEL"
+    else
+      (cd "$work_dir" && claude "${CLAUDE_ARGS[@]}")
+    fi
+  }
+
   ITER_START=$(date +%s)
   TIMED_OUT=false
 
-  if command -v timeout > /dev/null 2>&1; then
-    # GNU timeout available (Linux, MSYS)
-    if ! timeout "${TIMEOUT_SECONDS}s" claude "${CLAUDE_ARGS[@]}" 2>&1 | tee "$LOG_FILE"; then
-      ITER_END=$(date +%s)
-      ITER_ELAPSED=$(( ITER_END - ITER_START ))
-      if [[ "$ITER_ELAPSED" -ge "$((TIMEOUT_SECONDS - 5))" ]]; then
-        echo "  ⏰ Iteration timed out after ${ITER_TIMEOUT} minutes"
-        TIMED_OUT=true
-      else
-        echo "  ⚠️  Claude exited with error — check $LOG_FILE"
-      fi
-      sleep 5
-      if [[ "$TIMED_OUT" != "true" ]]; then
-        continue
-      fi
+  # Run Claude with background watchdog for timeout
+  run_claude 2>&1 | tee "$LOG_FILE" &
+  CLAUDE_PID=$!
+
+  # Watchdog: kill if exceeds timeout
+  (
+    sleep "$TIMEOUT_SECONDS"
+    if kill -0 "$CLAUDE_PID" 2>/dev/null; then
+      kill "$CLAUDE_PID" 2>/dev/null || true
+      echo "  ⏰ Iteration timed out after ${ITER_TIMEOUT} minutes" >> "$LOG_FILE"
     fi
-  else
-    # No timeout command — run with background watchdog
-    claude "${CLAUDE_ARGS[@]}" 2>&1 | tee "$LOG_FILE" &
-    CLAUDE_PID=$!
+  ) &
+  WATCHDOG_PID=$!
 
-    # Watchdog: kill if exceeds timeout
-    (
-      sleep "$TIMEOUT_SECONDS"
-      if kill -0 "$CLAUDE_PID" 2>/dev/null; then
-        kill "$CLAUDE_PID" 2>/dev/null || true
-        echo "  ⏰ Iteration timed out after ${ITER_TIMEOUT} minutes" >> "$LOG_FILE"
-      fi
-    ) &
-    WATCHDOG_PID=$!
+  wait "$CLAUDE_PID" 2>/dev/null
+  CLAUDE_EXIT=$?
+  kill "$WATCHDOG_PID" 2>/dev/null || true
+  wait "$WATCHDOG_PID" 2>/dev/null || true
 
-    wait "$CLAUDE_PID" 2>/dev/null || true
-    kill "$WATCHDOG_PID" 2>/dev/null || true
-    wait "$WATCHDOG_PID" 2>/dev/null || true
+  ITER_END=$(date +%s)
+  ITER_ELAPSED=$(( ITER_END - ITER_START ))
+
+  if [[ "$CLAUDE_EXIT" -ne 0 ]]; then
+    if [[ "$ITER_ELAPSED" -ge "$((TIMEOUT_SECONDS - 5))" ]]; then
+      echo "  ⏰ Iteration timed out after ${ITER_TIMEOUT} minutes"
+      TIMED_OUT=true
+    else
+      echo "  ⚠️  Claude exited with error — check $LOG_FILE"
+    fi
+    sleep 5
+    if [[ "$TIMED_OUT" != "true" ]]; then
+      continue
+    fi
   fi
 
   rm -f /tmp/ralph_prompt_$$.md
+
+  # Merge worktree back to main branch
+  if [[ -n "$WORKTREE_PATH" ]]; then
+    merge_worktree "$STORY_ID" || {
+      echo "  ⚠️  Worktree merge failed — manual resolution needed for $STORY_ID"
+      emit_telemetry "worktree_merge_failed" "story_id=$STORY_ID" "iteration=$ITERATION"
+    }
+  fi
 
   # Extract cost if available
   if [[ "$TRACK_COST" == "true" ]] && [[ "$USE_MAX_PLAN" != "true" ]]; then
@@ -446,9 +570,61 @@ while [[ $ITERATION -lt $MAX_ITERATIONS ]]; do
   new_remaining=$(count_pending "${PRD_DIR}/prd.json")
 
   STORIES_THIS_ITER=0
+  COMPLETED_STORY_ID=""
   if [[ "$new_remaining" -lt "$remaining" ]]; then
     STORIES_THIS_ITER=$((remaining - new_remaining))
     echo "  ✅ $STORIES_THIS_ITER story completed ($new_remaining remaining)"
+
+    # Find which story was just completed (for verification)
+    COMPLETED_STORY_ID=$(node -e "
+      const prd = JSON.parse(require('fs').readFileSync('${PRD_DIR}/prd.json', 'utf8'));
+      const completed = prd.userStories.filter(s => s.passes);
+      if (completed.length > 0) console.log(completed[completed.length - 1].id);
+    " 2>/dev/null || echo "")
+  fi
+
+  # ─── Verification step ─────────────────────────────────────────────────────
+  VERIFY_RESULT="skipped"
+  VERIFY_CONFIDENCE=0
+
+  if [[ "$VERIFY" == "true" ]] && [[ -n "$COMPLETED_STORY_ID" ]] && [[ -f "scripts/generate-proof.sh" ]]; then
+    echo "  🔍 Running verification for $COMPLETED_STORY_ID..."
+
+    VERIFY_ARGS=("$COMPLETED_STORY_ID" "${PRD_DIR}/prd.json")
+    if [[ "$VERIFY_RUNTIME" != "true" ]]; then
+      VERIFY_ARGS+=("--skip-runtime")
+    else
+      [[ -n "$DEV_CMD" ]] && VERIFY_ARGS+=("--dev-cmd" "$DEV_CMD")
+      VERIFY_ARGS+=("--dev-url" "$DEV_URL")
+    fi
+
+    if bash scripts/generate-proof.sh "${VERIFY_ARGS[@]}" 2>&1 | tee -a "$LOG_FILE"; then
+      # Read verdict
+      if [[ -f "proof/$COMPLETED_STORY_ID/verdict.json" ]]; then
+        VERIFY_CONFIDENCE=$(node -e "console.log(JSON.parse(require('fs').readFileSync('proof/$COMPLETED_STORY_ID/verdict.json','utf8')).confidence)" 2>/dev/null || echo "0")
+        VERIFY_VERDICT=$(node -e "console.log(JSON.parse(require('fs').readFileSync('proof/$COMPLETED_STORY_ID/verdict.json','utf8')).verdict)" 2>/dev/null || echo "UNKNOWN")
+
+        if [[ "$VERIFY_VERDICT" == "PASS" ]]; then
+          VERIFY_RESULT="passed"
+          echo "  ✅ Verification passed (confidence: $VERIFY_CONFIDENCE)"
+        else
+          VERIFY_RESULT="failed"
+          echo "  ❌ Verification failed (confidence: $VERIFY_CONFIDENCE)"
+        fi
+      else
+        VERIFY_RESULT="error"
+        echo "  ⚠️  Verification ran but no verdict produced"
+      fi
+    else
+      VERIFY_RESULT="error"
+      echo "  ⚠️  Verification script failed"
+    fi
+
+    emit_telemetry "verification" \
+      "iteration=$ITERATION" \
+      "story_id=$COMPLETED_STORY_ID" \
+      "result=$VERIFY_RESULT" \
+      "confidence=$VERIFY_CONFIDENCE"
   fi
 
   # Count files changed in this iteration
@@ -458,10 +634,24 @@ while [[ $ITERATION -lt $MAX_ITERATIONS ]]; do
     "iteration=$ITERATION" \
     "wall_time_secs=$ITER_WALL_SECS" \
     "quality_gate=$GATE_RESULT" \
+    "verification=$VERIFY_RESULT" \
+    "verify_confidence=$VERIFY_CONFIDENCE" \
     "stories_completed=$STORIES_THIS_ITER" \
     "stories_remaining=$new_remaining" \
     "files_changed=$FILES_CHANGED" \
     "total_cost=$TOTAL_COST"
+
+  # Track for next iteration's context injection
+  PREV_STORY_ID="$STORY_ID"
+  if [[ "$STORIES_THIS_ITER" -gt 0 ]]; then
+    PREV_RESULT="completed"
+  elif [[ "$GATE_RESULT" == "failed" ]]; then
+    PREV_RESULT="quality-gate-failed"
+  elif [[ "$TIMED_OUT" == "true" ]]; then
+    PREV_RESULT="timed-out"
+  else
+    PREV_RESULT="in-progress"
+  fi
 
   echo ""
   sleep 5
@@ -506,5 +696,17 @@ node -e "
 echo ""
 echo "Next steps:"
 echo "  /review          — Run parallel code review"
+echo "  /verify          — Independent verification of completed stories"
 echo "  /compound        — Capture learnings to docs/solutions/"
 echo ""
+
+# Show proof packet summary if verification was enabled
+if [[ "$VERIFY" == "true" ]] && [[ -d "proof" ]]; then
+  PROOF_COUNT=$(ls proof/*/verdict.json 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+  if [[ "$PROOF_COUNT" -gt 0 ]]; then
+    echo "Verification:"
+    echo "  Proof packets: $PROOF_COUNT"
+    echo "  Review queue:  bash scripts/hartz-land/review-queue.sh"
+    echo ""
+  fi
+fi
