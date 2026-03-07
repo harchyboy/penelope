@@ -1,1 +1,1 @@
-83295e3 fix: three Ralph loop bugs found during end-to-end testing
+1f35141 feat: stuck detection, auto-resolve, and ralph-chain
