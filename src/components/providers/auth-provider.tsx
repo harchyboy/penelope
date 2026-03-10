@@ -83,7 +83,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
 
-    initializeAuth()
+    // Safety timeout — never leave loading state stuck
+    const timeout = setTimeout(() => {
+      setIsLoading(false)
+    }, 5000)
+
+    initializeAuth().finally(() => clearTimeout(timeout))
 
     // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

@@ -226,30 +226,38 @@ export default function DashboardPage() {
         return
       }
 
+      // Timeout to prevent infinite loading
+      const timeout = setTimeout(() => {
+        console.error('Dashboard data loading timed out')
+        setIsLoading(false)
+        setError('Loading took too long. Please refresh the page.')
+      }, 10000)
+
       try {
-        const [personasResult, statusResult, companyProfilesResult] = await Promise.all([
+        const [personasResult, statusResult, companyProfilesResult] = await Promise.allSettled([
           getUserPersonas(),
           getUserFreePersonaStatus(),
           getUserCompanyProfiles(),
         ])
 
-        if (!personasResult.success) {
-          setError(personasResult.error || 'Failed to load personas')
+        if (personasResult.status === 'fulfilled' && personasResult.value.success) {
+          setPersonas(personasResult.value.data || [])
         } else {
-          setPersonas(personasResult.data || [])
+          console.error('Failed to load personas:', personasResult)
         }
 
-        if (statusResult.success) {
-          setFreePersonaUsed(statusResult.data?.free_persona_used ?? false)
+        if (statusResult.status === 'fulfilled' && statusResult.value.success) {
+          setFreePersonaUsed(statusResult.value.data?.free_persona_used ?? false)
         }
 
-        if (companyProfilesResult.success) {
-          setCompanyProfiles(companyProfilesResult.data || [])
+        if (companyProfilesResult.status === 'fulfilled' && companyProfilesResult.value.success) {
+          setCompanyProfiles(companyProfilesResult.value.data || [])
         }
       } catch (err) {
         console.error('Error loading dashboard:', err)
         setError('An unexpected error occurred')
       } finally {
+        clearTimeout(timeout)
         setIsLoading(false)
       }
     }
