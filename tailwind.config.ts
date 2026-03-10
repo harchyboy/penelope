@@ -39,8 +39,10 @@ const config: Config = {
         'hartz-muted': '#666666',
         'hartz-border': 'rgba(0,0,0,0.08)',
         // Premium Editorial Brand Colors (used by dashboard, create, etc.)
+        'brand-blue': '#3498A3',
         'brand-teal': '#3498A3',
         'brand-teal-dark': '#2a7a86',
+        'brand-orange': '#E87D4E',
         'brand-coral': '#E87D4E',
         'brand-coral-dark': '#d66a3d',
         'brand-dark': '#1a2a3a',
