@@ -56,13 +56,7 @@ export function Header() {
             Pricing
           </Link>
 
-          {isLoading ? (
-            // Loading skeleton
-            <div className="flex items-center gap-4">
-              <div className="h-9 w-16 bg-gray-200 animate-pulse rounded-full" />
-              <div className="h-9 w-28 bg-gray-200 animate-pulse rounded-full" />
-            </div>
-          ) : isAuthenticated ? (
+          {isAuthenticated ? (
             // Authenticated state
             <div className="flex items-center gap-4">
               <Link href="/dashboard">
@@ -131,11 +125,7 @@ export function Header() {
               Pricing
             </Link>
 
-            {isLoading ? (
-              <div className="px-4 py-2">
-                <div className="h-5 w-24 bg-gray-200 animate-pulse rounded" />
-              </div>
-            ) : isAuthenticated ? (
+            {isAuthenticated ? (
               <>
                 {/* User info */}
                 <div className="px-4 py-2 flex items-center gap-2 text-sm text-hartz-muted border-t border-black/[0.06] mt-2 pt-4">
