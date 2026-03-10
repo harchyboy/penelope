@@ -473,18 +473,23 @@ function CreatePersonaWizard() {
             
             <div>
               <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                🌐 Penelope is crafting your persona...
+                Penelope is researching your persona...
               </h2>
-              <p className="text-slate-600">
-                Applying consumer psychology, neuromarketing insights, and behavioral analysis
+              <p className="text-slate-600 max-w-md mx-auto">
+                This can take up to 60 seconds. Penelope is applying behavioural science
+                frameworks and psychological analysis to build a truly deep persona.
+              </p>
+              <p className="text-slate-500 text-sm mt-2">
+                Please be patient with Penelope — good research takes time.
               </p>
             </div>
 
             <div className="max-w-md mx-auto space-y-2">
               {[
-                'Analyzing business context...',
+                'Analysing business context...',
                 'Identifying psychographic patterns...',
                 'Mapping emotional drivers...',
+                'Applying behavioural frameworks...',
                 'Generating deep insights...',
               ].map((text, index) => (
                 <div
