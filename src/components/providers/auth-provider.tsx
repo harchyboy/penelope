@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 import type { User } from '@/types'
@@ -27,7 +27,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  const supabase = createClient()
+  // Stable Supabase client — created once, not on every render
+  const supabase = useMemo(() => createClient(), [])
 
   // Fetch user profile from public.users table
   const fetchUserProfile = useCallback(async (userId: string) => {
@@ -59,12 +60,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Error signing out:', error)
       throw error
     }
-    // State will be cleared by onAuthStateChange listener
   }, [supabase])
 
   // Initialize auth state and subscribe to changes
   useEffect(() => {
-    // Get initial session
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession()
@@ -103,14 +102,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(null)
         }
 
-        // If sign out event, ensure loading is false
         if (event === 'SIGNED_OUT') {
           setIsLoading(false)
         }
       }
     )
 
-    // Cleanup subscription on unmount
     return () => {
       subscription.unsubscribe()
     }
