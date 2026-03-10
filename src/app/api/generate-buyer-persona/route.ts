@@ -4,6 +4,9 @@ import { PENELOPE_SYSTEM_PROMPT, PERSONA_GENERATION_PROMPT } from '@/lib/prompts
 import { createClient } from '@/lib/supabase/server'
 import type { BusinessContext, CompanyProfile, PersonaData } from '@/types'
 
+// Allow up to 60s for persona generation (requires Vercel Pro)
+export const maxDuration = 60
+
 // Initialize Anthropic client
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -74,10 +77,10 @@ export async function POST(request: NextRequest) {
     // Call Claude API with prompt caching and extended thinking
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 8096,
+      max_tokens: 16000,
       thinking: {
         type: 'enabled',
-        budget_tokens: 16000,
+        budget_tokens: 5000,
       },
       system: [
         {
