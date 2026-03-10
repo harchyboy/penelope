@@ -4,8 +4,8 @@ import { PENELOPE_SYSTEM_PROMPT, PERSONA_GENERATION_PROMPT } from '@/lib/prompts
 import { createClient } from '@/lib/supabase/server'
 import type { BusinessContext, CompanyProfile, PersonaData } from '@/types'
 
-// Allow up to 60s for persona generation (requires Vercel Pro)
-export const maxDuration = 60
+// Allow up to 120s for persona generation
+export const maxDuration = 120
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({

@@ -5,8 +5,8 @@ import type { PersonaType, BusinessContext, GeneratePersonaRequest, Persona } fr
 import { generateId } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/server'
 
-// Allow up to 60s for persona generation (requires Vercel Pro)
-export const maxDuration = 60
+// Allow up to 120s for persona generation
+export const maxDuration = 120
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
