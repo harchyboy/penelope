@@ -77,11 +77,7 @@ export async function POST(request: NextRequest) {
     // Call Claude API with prompt caching and extended thinking
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 16000,
-      thinking: {
-        type: 'enabled',
-        budget_tokens: 5000,
-      },
+      max_tokens: 8096,
       system: [
         {
           type: 'text',
