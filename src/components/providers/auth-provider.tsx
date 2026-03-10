@@ -1,7 +1,8 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js'
 import type { User } from '@/types'
 
@@ -27,10 +28,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Stable Supabase client — created once, not on every render
-  const supabase = useMemo(() => createClient(), [])
+  // Stable client ref — never changes across renders
+  const supabaseRef = useRef<SupabaseClient | null>(null)
+  if (!supabaseRef.current) {
+    supabaseRef.current = createClient()
+  }
+  const supabase = supabaseRef.current
 
-  // Fetch user profile from public.users table
   const fetchUserProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from('users')
@@ -46,14 +50,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return data as User
   }, [supabase])
 
-  // Refresh user data from database
   const refreshUser = useCallback(async () => {
     if (!supabaseUser) return
     const userProfile = await fetchUserProfile(supabaseUser.id)
     setUser(userProfile)
   }, [supabaseUser, fetchUserProfile])
 
-  // Sign out function
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut()
     if (error) {
@@ -62,34 +64,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [supabase])
 
-  // Initialize auth state and subscribe to changes
+  // Use onAuthStateChange as the single source of truth — no separate getSession call
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession()
-
-        setSession(initialSession)
-        setSupabaseUser(initialSession?.user ?? null)
-
-        if (initialSession?.user) {
-          const userProfile = await fetchUserProfile(initialSession.user.id)
-          setUser(userProfile)
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    // Safety timeout — never leave loading state stuck
+    // Safety timeout
     const timeout = setTimeout(() => {
       setIsLoading(false)
     }, 5000)
 
-    initializeAuth().finally(() => clearTimeout(timeout))
-
-    // Subscribe to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         setSession(newSession)
@@ -102,13 +83,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(null)
         }
 
-        if (event === 'SIGNED_OUT') {
-          setIsLoading(false)
-        }
+        setIsLoading(false)
+        clearTimeout(timeout)
       }
     )
 
     return () => {
+      clearTimeout(timeout)
       subscription.unsubscribe()
     }
   }, [supabase, fetchUserProfile])
