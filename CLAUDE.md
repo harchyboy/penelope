@@ -72,12 +72,12 @@ These rules apply to every session, every agent, every task. No exceptions.
 | Task | Model |
 |------|-------|
 | Orchestrator / team lead | Opus |
-| Persona generation logic, AI framework implementation | Opus |
+| Persona generation logic, AI framework implementation | Sonnet |
 | Feature implementation, code review | Sonnet |
 | Codebase exploration, grep, read-only | Haiku |
 | Test generation, documentation | Haiku |
 
-Note: Persona generation (the core AI product) should always use Opus -- this is the quality-critical path.
+Note: Persona generation uses Sonnet without extended thinking (Vercel 60s function timeout constraint).
 
 ---
 
@@ -134,7 +134,7 @@ Every insight is tied to a practical implication -- what to say, how to say it, 
 | Framework | Next.js (App Router) |
 | Language | TypeScript |
 | CMS | Sanity CMS (headless) |
-| AI | Anthropic Claude (Opus for persona generation) |
+| AI | Anthropic Claude (Sonnet for persona generation) |
 | Styling | Tailwind CSS |
 | Hosting | Vercel |
 
@@ -166,12 +166,12 @@ const data = await client.fetch(`*[_type == "persona"] { title, slug, content }`
 
 ### Persona Generation
 
-All persona generation logic lives in lib/ai/. Always use Opus for generation calls:
+All persona generation logic lives in lib/prompts/. Uses Sonnet with extended thinking:
 
 ```typescript
-// Always Opus for persona generation -- quality is the product
 const response = await anthropic.messages.create({
-  model: 'claude-opus-4-6',
+  model: 'claude-sonnet-4-5-20250929',
+  max_tokens: 8096,
 });
 ```
 
@@ -185,7 +185,7 @@ npm run lint     # ESLint check
 
 ## Common Pitfalls
 
-- Using Sonnet for persona generation -- always use Opus, the persona output quality IS the product
+- Using Opus for persona generation -- Sonnet with extended thinking provides the best cost/quality balance
 - Surface-level outputs -- every persona insight must be actionable, never just descriptive
 - Missing B2B stakeholder coverage -- B2B personas must cover the full buying committee, not just one person
 - Sanity queries using wrong syntax -- Sanity uses GROQ, not GraphQL
