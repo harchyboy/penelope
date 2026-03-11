@@ -224,6 +224,7 @@ export async function POST(request: NextRequest) {
       user_id: null,
       type,
       company_id: company_id || null,
+      research_project_id: null,
       business_context,
       persona_data: type === 'b2b_company' ? null : personaData,
       company_profile: type === 'b2b_company' ? personaData : null,
