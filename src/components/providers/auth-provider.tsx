@@ -29,7 +29,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
 
   // Stable client ref — never changes across renders
-  const supabaseRef = useRef<SupabaseClient | null>(null)
+  const supabaseRef = useRef<SupabaseClient>(null!)
   if (!supabaseRef.current) {
     supabaseRef.current = createClient()
   }
