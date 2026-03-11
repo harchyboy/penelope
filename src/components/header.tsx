@@ -56,9 +56,12 @@ export function Header() {
             Pricing
           </Link>
 
-          {isAuthenticated ? (
+          {isLoading ? (
+            // Loading state — show nothing to prevent flash
+            <div className="w-48" />
+          ) : isAuthenticated ? (
             // Authenticated state
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Link
                 href="/dashboard"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-xs font-medium transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 h-9 px-4"
@@ -66,13 +69,17 @@ export function Header() {
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
-              <div className="flex items-center gap-2 text-sm text-hartz-muted">
-                <User className="h-4 w-4" />
-                <span className="max-w-32 truncate">{displayName}</span>
-              </div>
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-white text-sm font-medium">
+                  {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                </div>
+                <span className="max-w-32 truncate text-sm font-medium text-hartz-black">{displayName}</span>
+              </Link>
               <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
+                <LogOut className="h-4 w-4" />
               </Button>
             </div>
           ) : (
@@ -136,9 +143,11 @@ export function Header() {
             {isAuthenticated ? (
               <>
                 {/* User info */}
-                <div className="px-4 py-2 flex items-center gap-2 text-sm text-hartz-muted border-t border-black/[0.06] mt-2 pt-4">
-                  <User className="h-4 w-4" />
-                  <span className="truncate">{displayName}</span>
+                <div className="px-4 py-2 flex items-center gap-3 text-sm text-hartz-muted border-t border-black/[0.06] mt-2 pt-4">
+                  <div className="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                    {(user?.name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                  </div>
+                  <span className="truncate font-medium text-hartz-black">{displayName}</span>
                 </div>
 
                 <Link

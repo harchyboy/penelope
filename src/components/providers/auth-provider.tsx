@@ -88,7 +88,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
             .single()
 
           if (isMounted) {
-            setUser(error ? null : data as User)
+            if (data && !error) {
+              setUser(data as User)
+            } else {
+              // Fallback: build user from Supabase auth metadata
+              console.warn('Failed to fetch user profile, using auth metadata:', error?.message)
+              setUser({
+                id: newSession.user.id,
+                email: newSession.user.email || '',
+                name: newSession.user.user_metadata?.name || null,
+                role: 'user',
+                free_persona_used: false,
+                created_at: newSession.user.created_at,
+                updated_at: newSession.user.updated_at || newSession.user.created_at,
+              } as User)
+            }
           }
         } else {
           setUser(null)
