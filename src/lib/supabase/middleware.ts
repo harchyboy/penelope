@@ -38,22 +38,25 @@ export async function updateSession(request: NextRequest) {
   // Refresh session - this is critical for session persistence
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser()
 
-  // Fetch user role from public.users if authenticated
-  let userWithRole: UserWithRole | null = null
-  if (user) {
-    const { data: userProfile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+  // If auth fails or no user, treat as unauthenticated
+  if (userError || !user) {
+    return { supabaseResponse, user: null }
+  }
 
-    userWithRole = {
-      id: user.id,
-      email: user.email,
-      role: userProfile?.role || 'user',
-    }
+  // Fetch user role from public.users if authenticated
+  const { data: userProfile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const userWithRole: UserWithRole = {
+    id: user.id,
+    email: user.email,
+    role: userProfile?.role || 'user',
   }
 
   return { supabaseResponse, user: userWithRole }
