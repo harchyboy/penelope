@@ -250,13 +250,23 @@ export default function PersonaPage() {
       {/* Header */}
       <header className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button 
-            onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </button>
+          {persona.research_project_id ? (
+            <button
+              onClick={() => router.push(`/research/${persona.research_project_id}`)}
+              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Research
+            </button>
+          ) : (
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Home
+            </button>
+          )}
           
           <div className="flex items-center gap-3">
             <Button 

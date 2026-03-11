@@ -171,11 +171,23 @@ export interface CompanyProfile {
   competitors: string[]
 }
 
+export interface ResearchProject {
+  id: string
+  user_id: string
+  title: string
+  type: PersonaType
+  business_context: BusinessContext
+  company_profile_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Persona {
   id: string
   user_id: string | null
   type: PersonaType
   company_id: string | null  // For b2b_buyer, links to parent company
+  research_project_id: string | null  // Links to research project
   business_context: BusinessContext
   persona_data: PersonaData | null
   company_profile: CompanyProfile | null  // For b2b_company type
@@ -231,6 +243,7 @@ export interface GeneratePersonaRequest {
   type: PersonaType
   business_context: BusinessContext
   company_id?: string  // For b2b_buyer
+  research_project_id?: string  // For adding to existing research project
 }
 
 export interface GeneratePersonaResponse {

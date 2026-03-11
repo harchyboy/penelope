@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import type { Persona, ApiResponse, CompanyProfile } from '@/types'
+import type { Persona, ApiResponse, CompanyProfile, ResearchProject } from '@/types'
 
 export interface CompanyProfileListItem {
   id: string
@@ -192,6 +192,103 @@ export async function getUserCompanyProfiles(): Promise<ApiResponse<CompanyProfi
     return { success: true, data: companyProfileListItems }
   } catch (err) {
     console.error('Unexpected error in getUserCompanyProfiles:', err)
+    return { success: false, error: 'An unexpected error occurred' }
+  }
+}
+
+export interface ResearchProjectListItem extends ResearchProject {
+  persona_count: number
+}
+
+/**
+ * Fetch user's research projects for dashboard display.
+ * - Queries research_projects table filtered by user_id
+ * - Counts linked personas for each project
+ * - Returns typed ResearchProjectListItem[] array
+ */
+export async function getUserResearchProjects(): Promise<ApiResponse<ResearchProjectListItem[]>> {
+  try {
+    const supabase = createClient()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    // Query all research projects for this user
+    const { data: projects, error } = await supabase
+      .from('research_projects')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching research projects:', error)
+      return { success: false, error: 'Failed to fetch research projects' }
+    }
+
+    if (!projects || projects.length === 0) {
+      return { success: true, data: [] }
+    }
+
+    // Count personas for each project
+    const projectIds = projects.map((p) => p.id)
+    const { data: personaCounts, error: countError } = await supabase
+      .from('personas')
+      .select('research_project_id')
+      .in('research_project_id', projectIds)
+
+    if (countError) {
+      console.error('Error counting personas:', countError)
+    }
+
+    const countMap = new Map<string, number>()
+    if (personaCounts) {
+      personaCounts.forEach((p) => {
+        const currentCount = countMap.get(p.research_project_id) || 0
+        countMap.set(p.research_project_id, currentCount + 1)
+      })
+    }
+
+    const projectListItems: ResearchProjectListItem[] = projects.map((p) => ({
+      ...p,
+      persona_count: countMap.get(p.id) || 0,
+    })) as ResearchProjectListItem[]
+
+    return { success: true, data: projectListItems }
+  } catch (err) {
+    console.error('Unexpected error in getUserResearchProjects:', err)
+    return { success: false, error: 'An unexpected error occurred' }
+  }
+}
+
+/**
+ * Fetch user's orphaned personas (not linked to any research project).
+ */
+export async function getOrphanedPersonas(): Promise<ApiResponse<PersonaListItem[]>> {
+  try {
+    const supabase = createClient()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return { success: false, error: 'Not authenticated' }
+    }
+
+    const { data: personas, error } = await supabase
+      .from('personas')
+      .select('*')
+      .eq('user_id', user.id)
+      .is('research_project_id', null)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching orphaned personas:', error)
+      return { success: false, error: 'Failed to fetch personas' }
+    }
+
+    return { success: true, data: (personas || []) as PersonaListItem[] }
+  } catch (err) {
+    console.error('Unexpected error in getOrphanedPersonas:', err)
     return { success: false, error: 'An unexpected error occurred' }
   }
 }

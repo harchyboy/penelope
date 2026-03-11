@@ -20,10 +20,15 @@ function CreatePersonaWizard() {
   const initialType = searchParams.get('type') as 'b2c' | 'b2b' | null
   const initialBusinessName = searchParams.get('business_name') || ''
   const initialIndustry = searchParams.get('industry') || ''
+  const researchProjectId = searchParams.get('research_project_id') || null
+
 
   // Skip to business step if we have prefilled data from landing page
   const hasPrefilledData = initialBusinessName || initialIndustry
-  const [step, setStep] = useState<WizardStep>(initialType || hasPrefilledData ? 'business' : 'type')
+  const [step, setStep] = useState<WizardStep>(
+    researchProjectId ? 'generating' :
+    initialType || hasPrefilledData ? 'business' : 'type'
+  )
   const [personaType, setPersonaType] = useState<PersonaType | null>(
     initialType === 'b2c' ? 'b2c_individual' :
     initialType === 'b2b' ? 'b2b_company' :
@@ -40,6 +45,42 @@ function CreatePersonaWizard() {
     problem_solved: '',
     unique_selling_point: '',
   })
+
+  // If research_project_id is provided, auto-generate immediately
+  useEffect(() => {
+    if (!researchProjectId) return
+
+    async function generateForProject() {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch('/api/generate-persona', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'b2c_individual', // Will be overridden by project type via API
+            business_context: { business_name: '', business_sector: '', price_point: 'similar', target_location: '', problem_solved: '', unique_selling_point: '' },
+            research_project_id: researchProjectId,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to generate persona')
+        }
+
+        const data = await response.json()
+        router.push(`/research/${data.research_project_id || researchProjectId}`)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong')
+        setStep('type')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    generateForProject()
+  }, [researchProjectId, router])
   
   // URL extraction
   const [websiteUrl, setWebsiteUrl] = useState('')
@@ -122,7 +163,7 @@ function CreatePersonaWizard() {
     setStep('generating')
     setIsLoading(true)
     setError(null)
-    
+
     try {
       const context: BusinessContext = {
         ...businessContext,
@@ -132,7 +173,7 @@ function CreatePersonaWizard() {
           decision_makers: decisionMakers.split(',').map(s => s.trim()).filter(Boolean),
         }),
       }
-      
+
       const response = await fetch('/api/generate-persona', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,15 +182,19 @@ function CreatePersonaWizard() {
           business_context: context,
         }),
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to generate persona')
       }
-      
+
       const data = await response.json()
-      
-      // Redirect to the persona page
-      router.push(`/persona/${data.persona_id}`)
+
+      // Redirect to the research project if one was created, otherwise persona page
+      if (data.research_project_id) {
+        router.push(`/research/${data.research_project_id}`)
+      } else {
+        router.push(`/persona/${data.persona_id}`)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setStep('business')

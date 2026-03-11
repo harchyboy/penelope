@@ -20,7 +20,43 @@ const previewStore = new Map<string, Persona>()
 export async function POST(request: NextRequest) {
   try {
     const body: GeneratePersonaRequest = await request.json()
-    const { type, business_context, company_id } = body
+    const { type, company_id, research_project_id } = body
+    let { business_context } = body
+
+    // If research_project_id provided, look up the project for business_context
+    let resolvedResearchProjectId = research_project_id || null
+    let existingPersonaNames: string[] = []
+
+    if (research_project_id) {
+      const supabaseLookup = createClient()
+      const { data: project, error: projectError } = await supabaseLookup
+        .from('research_projects')
+        .select('*')
+        .eq('id', research_project_id)
+        .single()
+
+      if (projectError || !project) {
+        return NextResponse.json(
+          { error: 'Research project not found' },
+          { status: 404 }
+        )
+      }
+
+      business_context = project.business_context as typeof business_context
+
+      // Fetch existing persona names in this project to ensure uniqueness
+      const { data: existingPersonas } = await supabaseLookup
+        .from('personas')
+        .select('persona_data')
+        .eq('research_project_id', research_project_id)
+        .not('persona_data', 'is', null)
+
+      if (existingPersonas) {
+        existingPersonaNames = existingPersonas
+          .map((p) => (p.persona_data as any)?.name)
+          .filter(Boolean)
+      }
+    }
 
     // Validate required fields
     if (!type || !business_context) {
@@ -39,9 +75,14 @@ export async function POST(request: NextRequest) {
     const contextString = formatBusinessContext(business_context, type)
 
     // Choose the appropriate prompt based on type
-    const userPrompt = type === 'b2b_company'
+    let userPrompt = type === 'b2b_company'
       ? COMPANY_PROFILE_PROMPT.replace('{business_context}', contextString)
       : PERSONA_GENERATION_PROMPT.replace('{business_context}', contextString)
+
+    // If adding to an existing project with personas, instruct differentiation
+    if (existingPersonaNames.length > 0) {
+      userPrompt += `\n\nIMPORTANT: This business already has the following persona(s): ${existingPersonaNames.join(', ')}. Generate a DIFFERENT and DISTINCT customer persona segment from any previously generated. Focus on a different demographic, psychographic, or behavioral profile. Do NOT reuse the same name or archetype.`
+    }
 
     // Call Claude API with prompt caching and extended thinking
     const message = await anthropic.messages.create({
@@ -112,6 +153,36 @@ export async function POST(request: NextRequest) {
         companyProfileId = savedCompanyProfile.id
       }
 
+      // Create or use existing research project
+      if (!resolvedResearchProjectId) {
+        const projectTitle = business_context.business_name || 'Untitled Research'
+        const { data: newProject, error: projectError } = await supabase
+          .from('research_projects')
+          .insert({
+            user_id: user.id,
+            title: projectTitle,
+            type: type === 'b2b_buyer' ? 'b2b_company' : type,
+            business_context,
+            company_profile_id: companyProfileId,
+          })
+          .select('id')
+          .single()
+
+        if (projectError) {
+          console.error('Failed to create research project:', projectError)
+          // Non-fatal: persona can still be saved without a project
+        } else {
+          resolvedResearchProjectId = newProject.id
+        }
+      } else if (companyProfileId) {
+        // Update existing research project with company_profile_id if not set
+        await supabase
+          .from('research_projects')
+          .update({ company_profile_id: companyProfileId })
+          .eq('id', resolvedResearchProjectId)
+          .is('company_profile_id', null)
+      }
+
       const { data: savedPersona, error: insertError } = await supabase
         .from('personas')
         .insert({
@@ -121,6 +192,7 @@ export async function POST(request: NextRequest) {
           persona_data: type === 'b2b_company' ? null : personaData,
           company_profile: type === 'b2b_company' ? personaData : null,
           company_id: company_id || null,
+          research_project_id: resolvedResearchProjectId,
           is_unlocked: false, // Default to locked, user can use free unlock
           is_complete: true,
         })
@@ -141,6 +213,7 @@ export async function POST(request: NextRequest) {
         persona_data: personaData,
         is_preview: false, // Authenticated users get their persona saved
         company_profile_id: companyProfileId, // Include for linking buyer personas
+        research_project_id: resolvedResearchProjectId, // Include for navigation
       })
     }
 

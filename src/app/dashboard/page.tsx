@@ -8,7 +8,7 @@ import { Plus, Users, Building2, Lock, Unlock, Sparkles, ArrowRight, Crown, Cred
 import { formatDate } from '@/lib/utils'
 import type { Persona, PersonaType, Subscription } from '@/types'
 import { useEffect, useState } from 'react'
-import { getUserPersonas, getUserFreePersonaStatus, getUserCompanyProfiles, type CompanyProfileListItem } from './actions'
+import { getUserPersonas, getUserFreePersonaStatus, getUserCompanyProfiles, getUserResearchProjects, getOrphanedPersonas, type CompanyProfileListItem, type ResearchProjectListItem } from './actions'
 import { getUserSubscription } from './subscription-actions'
 
 // Type badge component
@@ -124,6 +124,48 @@ function CompanyProfileCard({ companyProfile }: { companyProfile: CompanyProfile
             </p>
             <p>
               <span className="font-medium text-slate-700">Created:</span> {formatDate(companyProfile.created_at)}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  )
+}
+
+// Research project card component
+function ResearchProjectCard({ project }: { project: ResearchProjectListItem }) {
+  const isB2B = project.type === 'b2b_company'
+
+  return (
+    <Link href={`/research/${project.id}`}>
+      <Card hover className="h-full">
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-lg line-clamp-1">{project.title}</CardTitle>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+              isB2B ? 'bg-orange-100' : 'bg-blue-100'
+            }`}>
+              {isB2B ? (
+                <Building2 className="h-4 w-4 text-brand-orange" />
+              ) : (
+                <Users className="h-4 w-4 text-brand-blue" />
+              )}
+            </div>
+          </div>
+          <CardDescription>
+            <TypeBadge type={project.type as PersonaType} />
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm text-slate-500">
+            <p className="flex items-center gap-1">
+              <span className="font-medium text-slate-700">Personas:</span>
+              <span className={project.persona_count > 0 ? 'text-brand-blue font-medium' : ''}>
+                {project.persona_count}
+              </span>
+            </p>
+            <p>
+              <span className="font-medium text-slate-700">Updated:</span> {formatDate(project.updated_at)}
             </p>
           </div>
         </CardContent>
@@ -249,6 +291,8 @@ export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth()
   const [personas, setPersonas] = useState<Persona[]>([])
   const [companyProfiles, setCompanyProfiles] = useState<CompanyProfileListItem[]>([])
+  const [researchProjects, setResearchProjects] = useState<ResearchProjectListItem[]>([])
+  const [orphanedPersonas, setOrphanedPersonas] = useState<Persona[]>([])
   const [freePersonaUsed, setFreePersonaUsed] = useState(false)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -271,11 +315,13 @@ export default function DashboardPage() {
       }, 10000)
 
       try {
-        const [personasResult, statusResult, companyProfilesResult, subscriptionResult] = await Promise.allSettled([
+        const [personasResult, statusResult, companyProfilesResult, subscriptionResult, projectsResult, orphanedResult] = await Promise.allSettled([
           getUserPersonas(),
           getUserFreePersonaStatus(),
           getUserCompanyProfiles(),
           getUserSubscription(),
+          getUserResearchProjects(),
+          getOrphanedPersonas(),
         ])
 
         if (personasResult.status === 'fulfilled' && personasResult.value.success) {
@@ -294,6 +340,14 @@ export default function DashboardPage() {
 
         if (subscriptionResult.status === 'fulfilled' && subscriptionResult.value.success) {
           setSubscription(subscriptionResult.value.data || null)
+        }
+
+        if (projectsResult.status === 'fulfilled' && projectsResult.value.success) {
+          setResearchProjects(projectsResult.value.data || [])
+        }
+
+        if (orphanedResult.status === 'fulfilled' && orphanedResult.value.success) {
+          setOrphanedPersonas(orphanedResult.value.data || [])
         }
       } catch (err) {
         console.error('Error loading dashboard:', err)
@@ -384,6 +438,24 @@ export default function DashboardPage() {
             <FreePersonaStatus used={freePersonaUsed} />
           )}
 
+          {/* Research Projects section */}
+          {researchProjects.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-slate-900">
+                Research Projects
+                <span className="ml-2 text-sm font-normal text-slate-500">
+                  ({researchProjects.length} {researchProjects.length === 1 ? 'project' : 'projects'})
+                </span>
+              </h2>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {researchProjects.map((project) => (
+                  <ResearchProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Company Profiles section - only show if user has any */}
           {companyProfiles.length > 0 && (
             <div className="space-y-4">
@@ -402,27 +474,28 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Personas section */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-slate-900">
-              Your Personas
-              {personas.length > 0 && (
+          {/* Orphaned Personas section - personas not linked to any research project */}
+          {orphanedPersonas.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-slate-900">
+                Individual Personas
                 <span className="ml-2 text-sm font-normal text-slate-500">
-                  ({personas.length} {personas.length === 1 ? 'persona' : 'personas'})
+                  ({orphanedPersonas.length} {orphanedPersonas.length === 1 ? 'persona' : 'personas'})
                 </span>
-              )}
-            </h2>
+              </h2>
 
-            {personas.length === 0 ? (
-              <EmptyState />
-            ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {personas.map((persona) => (
+                {orphanedPersonas.map((persona) => (
                   <PersonaCard key={persona.id} persona={persona} />
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Empty state - show when no projects and no orphaned personas */}
+          {researchProjects.length === 0 && orphanedPersonas.length === 0 && personas.length === 0 && (
+            <EmptyState />
+          )}
         </div>
       </div>
     </div>
