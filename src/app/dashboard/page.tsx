@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { useAuth } from '@/components/providers/auth-provider'
 import { Button } from '@/components/ui'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui'
-import { Plus, Users, Building2, Lock, Unlock, Sparkles, ArrowRight } from 'lucide-react'
+import { Plus, Users, Building2, Lock, Unlock, Sparkles, ArrowRight, Crown, CreditCard } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
-import type { Persona, PersonaType } from '@/types'
+import type { Persona, PersonaType, Subscription } from '@/types'
 import { useEffect, useState } from 'react'
 import { getUserPersonas, getUserFreePersonaStatus, getUserCompanyProfiles, type CompanyProfileListItem } from './actions'
+import { getUserSubscription } from './subscription-actions'
 
 // Type badge component
 function TypeBadge({ type }: { type: PersonaType }) {
@@ -195,6 +196,40 @@ function FreePersonaStatus({ used }: { used: boolean }) {
   )
 }
 
+// Subscription status banner
+function SubscriptionBanner({ subscription, portalLoading, onManage }: { subscription: Subscription; portalLoading: boolean; onManage: () => void }) {
+  const isPro = subscription.plan === 'monthly'
+  const credits = subscription.personas_remaining
+
+  return (
+    <div className="bg-gradient-to-r from-brand-blue/10 to-brand-blue/5 border border-brand-blue/20 rounded-lg p-4 flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-brand-blue/20 flex items-center justify-center flex-shrink-0">
+          <Crown className="h-5 w-5 text-brand-blue" />
+        </div>
+        <div>
+          <p className="font-medium text-slate-900">
+            {isPro ? 'Penelope Pro' : 'Single Unlock'}
+            <span className="ml-2 text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded-full">Active</span>
+          </p>
+          <p className="text-sm text-slate-600">
+            {isPro
+              ? 'Unlimited persona generation and unlocks'
+              : credits > 0
+                ? `${credits} persona unlock${credits === 1 ? '' : 's'} remaining`
+                : 'No unlocks remaining'
+            }
+          </p>
+        </div>
+      </div>
+      <Button variant="outline" size="sm" onClick={onManage} isLoading={portalLoading} disabled={portalLoading}>
+        <CreditCard className="h-4 w-4 mr-1" />
+        Manage Billing
+      </Button>
+    </div>
+  )
+}
+
 // Loading skeleton
 function LoadingSkeleton() {
   return (
@@ -215,8 +250,10 @@ export default function DashboardPage() {
   const [personas, setPersonas] = useState<Persona[]>([])
   const [companyProfiles, setCompanyProfiles] = useState<CompanyProfileListItem[]>([])
   const [freePersonaUsed, setFreePersonaUsed] = useState(false)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [portalLoading, setPortalLoading] = useState(false)
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -234,10 +271,11 @@ export default function DashboardPage() {
       }, 10000)
 
       try {
-        const [personasResult, statusResult, companyProfilesResult] = await Promise.allSettled([
+        const [personasResult, statusResult, companyProfilesResult, subscriptionResult] = await Promise.allSettled([
           getUserPersonas(),
           getUserFreePersonaStatus(),
           getUserCompanyProfiles(),
+          getUserSubscription(),
         ])
 
         if (personasResult.status === 'fulfilled' && personasResult.value.success) {
@@ -252,6 +290,10 @@ export default function DashboardPage() {
 
         if (companyProfilesResult.status === 'fulfilled' && companyProfilesResult.value.success) {
           setCompanyProfiles(companyProfilesResult.value.data || [])
+        }
+
+        if (subscriptionResult.status === 'fulfilled' && subscriptionResult.value.success) {
+          setSubscription(subscriptionResult.value.data || null)
         }
       } catch (err) {
         console.error('Error loading dashboard:', err)
@@ -296,6 +338,21 @@ export default function DashboardPage() {
     )
   }
 
+  const handleManageSubscription = async () => {
+    setPortalLoading(true)
+    try {
+      const response = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = await response.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err) {
+      console.error('Failed to open billing portal:', err)
+    } finally {
+      setPortalLoading(false)
+    }
+  }
+
   const displayName = user?.name || user?.email?.split('@')[0] || 'User'
 
   return (
@@ -320,8 +377,12 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* Free persona status */}
-          <FreePersonaStatus used={freePersonaUsed} />
+          {/* Subscription status */}
+          {subscription?.status === 'active' ? (
+            <SubscriptionBanner subscription={subscription} portalLoading={portalLoading} onManage={handleManageSubscription} />
+          ) : (
+            <FreePersonaStatus used={freePersonaUsed} />
+          )}
 
           {/* Company Profiles section - only show if user has any */}
           {companyProfiles.length > 0 && (

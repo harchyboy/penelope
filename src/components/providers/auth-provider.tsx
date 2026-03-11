@@ -66,33 +66,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Use onAuthStateChange as the single source of truth — no separate getSession call
   useEffect(() => {
+    let isMounted = true
+
     // Safety timeout
     const timeout = setTimeout(() => {
-      setIsLoading(false)
+      if (isMounted) setIsLoading(false)
     }, 5000)
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        if (!isMounted) return
+
         setSession(newSession)
         setSupabaseUser(newSession?.user ?? null)
 
         if (newSession?.user) {
-          const userProfile = await fetchUserProfile(newSession.user.id)
-          setUser(userProfile)
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', newSession.user.id)
+            .single()
+
+          if (isMounted) {
+            setUser(error ? null : data as User)
+          }
         } else {
           setUser(null)
         }
 
-        setIsLoading(false)
-        clearTimeout(timeout)
+        if (isMounted) {
+          setIsLoading(false)
+          clearTimeout(timeout)
+        }
       }
     )
 
     return () => {
+      isMounted = false
       clearTimeout(timeout)
       subscription.unsubscribe()
     }
-  }, [supabase, fetchUserProfile])
+  }, [supabase])
 
   const value: AuthContextValue = {
     user,

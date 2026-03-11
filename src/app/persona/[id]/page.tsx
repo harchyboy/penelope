@@ -22,7 +22,8 @@ import {
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@/components/ui'
 import { useAuth } from '@/components/providers/auth-provider'
 import { unlockFreePersona } from './actions'
-import type { Persona, PersonaData, CompanyProfile } from '@/types'
+import { unlockPaidPersona, getUserSubscription } from '@/app/dashboard/subscription-actions'
+import type { Persona, PersonaData, CompanyProfile, Subscription } from '@/types'
 
 interface PersonaApiResponse {
   success: boolean
@@ -46,12 +47,19 @@ export default function PersonaPage() {
   const [unlockLoading, setUnlockLoading] = useState(false)
   const [unlockError, setUnlockError] = useState<string | null>(null)
   const [unlockSuccess, setUnlockSuccess] = useState(false)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
+
     async function fetchPersona() {
       try {
-        const response = await fetch(`/api/generate-persona?id=${params.id}`)
+        const response = await fetch(`/api/generate-persona?id=${params.id}`, {
+          signal: controller.signal,
+        })
         const data = await response.json()
+
+        if (controller.signal.aborted) return
 
         if (response.status === 404) {
           setIs404(true)
@@ -67,16 +75,33 @@ export default function PersonaPage() {
         setIsOwner(apiResponse.is_owner ?? false)
         setIsPreview(apiResponse.is_preview ?? true)
       } catch (err) {
+        if (controller.signal.aborted) return
         setError(err instanceof Error ? err.message : 'Something went wrong')
       } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
 
     if (params.id) {
       fetchPersona()
     }
+
+    return () => controller.abort()
   }, [params.id])
+
+  // Fetch subscription status for authenticated users
+  useEffect(() => {
+    async function fetchSubscription() {
+      if (!isAuthenticated) return
+      const result = await getUserSubscription()
+      if (result.success && result.data) {
+        setSubscription(result.data)
+      }
+    }
+    if (!authLoading) {
+      fetchSubscription()
+    }
+  }, [isAuthenticated, authLoading])
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
@@ -117,6 +142,32 @@ export default function PersonaPage() {
       setUnlockLoading(false)
     }
   }
+
+  const handlePaidUnlock = async () => {
+    if (!params.id || typeof params.id !== 'string') return
+
+    setUnlockLoading(true)
+    setUnlockError(null)
+
+    try {
+      const result = await unlockPaidPersona(params.id)
+      if (result.success) {
+        setUnlockSuccess(true)
+        if (persona) {
+          setPersona({ ...persona, is_unlocked: true })
+        }
+      } else {
+        setUnlockError(result.error || 'Failed to unlock persona')
+      }
+    } catch {
+      setUnlockError('An unexpected error occurred. Please try again.')
+    } finally {
+      setUnlockLoading(false)
+    }
+  }
+
+  const hasActiveSubscription = subscription?.status === 'active'
+  const hasUnlockCredits = hasActiveSubscription && (subscription.personas_remaining === -1 || subscription.personas_remaining > 0)
 
   if (loading || authLoading) {
     return (
@@ -278,11 +329,23 @@ export default function PersonaPage() {
                   <Unlock className="mr-2 h-4 w-4" />
                   {unlockLoading ? 'Unlocking...' : 'Use Free Unlock'}
                 </Button>
-              ) : (
-                <Button variant="accent" disabled>
-                  <Lock className="mr-2 h-4 w-4" />
-                  Upgrade Required
+              ) : isOwner && hasUnlockCredits ? (
+                <Button
+                  variant="accent"
+                  onClick={handlePaidUnlock}
+                  isLoading={unlockLoading}
+                  disabled={unlockLoading}
+                >
+                  <Unlock className="mr-2 h-4 w-4" />
+                  {unlockLoading ? 'Unlocking...' : 'Unlock Persona'}
                 </Button>
+              ) : (
+                <Link href={`/pricing?persona_id=${params.id}`}>
+                  <Button variant="accent">
+                    <Lock className="mr-2 h-4 w-4" />
+                    Upgrade to Unlock
+                  </Button>
+                </Link>
               )}
             </div>
           </div>

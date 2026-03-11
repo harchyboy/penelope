@@ -1,6 +1,3 @@
--- Enable UUID extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- ============================================
 -- USERS TABLE
 -- ============================================
@@ -27,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
 -- Stores both B2C individual personas and B2B company personas
 
 CREATE TABLE IF NOT EXISTS public.personas (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('b2c_individual', 'b2b_company', 'b2b_buyer')),
   business_context JSONB NOT NULL,
@@ -57,7 +54,7 @@ ALTER TABLE public.personas
 -- Stores B2B company profiles separately for better querying
 
 CREATE TABLE IF NOT EXISTS public.company_profiles (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   company_data JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -73,7 +70,7 @@ CREATE INDEX IF NOT EXISTS idx_company_profiles_user_id ON public.company_profil
 -- Links buyer personas to company profiles
 
 CREATE TABLE IF NOT EXISTS public.buyer_personas (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_profile_id UUID NOT NULL REFERENCES public.company_profiles(id) ON DELETE CASCADE,
   persona_data JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

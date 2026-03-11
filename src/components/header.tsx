@@ -59,11 +59,12 @@ export function Header() {
           {isAuthenticated ? (
             // Authenticated state
             <div className="flex items-center gap-4">
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
-                  Dashboard
-                </Button>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-xs font-medium transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 h-9 px-4"
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                Dashboard
               </Link>
               <div className="flex items-center gap-2 text-sm text-hartz-muted">
                 <User className="h-4 w-4" />
@@ -77,17 +78,24 @@ export function Header() {
           ) : (
             // Unauthenticated state
             <>
-              <Link href="/login">
-                <Button variant="ghost" size="sm">Sign In</Button>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-xs font-medium transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 h-9 px-4"
+              >
+                Sign In
               </Link>
-              <Link href="/register">
-                <Button variant="ghost" size="sm">Register</Button>
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-lg text-xs font-medium transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 h-9 px-4"
+              >
+                Register
               </Link>
-              <Link href="/create">
-                <button className="px-5 py-2 bg-hartz-blue text-white rounded-full font-medium text-sm hover:bg-hartz-blue/90 transition-all">
-                  Create Persona
-                  <ArrowRight className="inline ml-2 h-4 w-4" />
-                </button>
+              <Link
+                href="/create"
+                className="px-5 py-2 bg-hartz-blue text-white rounded-full font-medium text-sm hover:bg-hartz-blue/90 transition-all inline-flex items-center"
+              >
+                Create Persona
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </>
           )}

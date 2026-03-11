@@ -76,3 +76,38 @@ useEffect(() => {
 
 **Files modified:**
 - `src/app/page.tsx` - Added `PersonaVisualization` component with animated elements
+
+---
+
+## Stripe Integration - 2026-03-10
+
+**Area:** Payment integration with Stripe
+
+**Pattern discovered:** Stripe webhooks cannot use the normal Supabase server client (which relies on cookies/auth session). Must use `createClient` from `@supabase/supabase-js` directly with the service role key. This is because webhook requests come from Stripe, not from the browser.
+
+**Architecture decisions:**
+- Single `subscriptions` table with `UNIQUE` on `user_id` — one active subscription per user, using `upsert` with `onConflict: 'user_id'`
+- `personas_remaining = -1` means unlimited (monthly Pro plan)
+- One-time purchases increment `personas_remaining` by 1
+- Webhook is the single source of truth for subscription state — frontend never writes to subscriptions table
+- RLS policy: users can SELECT their own subscription; only service_role can INSERT/UPDATE (webhook-driven)
+
+**Gotchas:**
+- Stripe `apiVersion` must match the types from the installed `stripe` package — using `2024-06-20`
+- `PGRST116` error code from Supabase means "no rows found" on `.single()` — not a real error, handle gracefully
+- Checkout success redirect goes to `/api/stripe/success` (a route handler) that verifies payment status before redirecting to the actual page
+
+**Files created:**
+- `src/lib/stripe.ts` — Stripe client + plan configuration
+- `src/app/api/stripe/checkout/route.ts` — Creates Checkout sessions
+- `src/app/api/stripe/webhook/route.ts` — Handles Stripe events
+- `src/app/api/stripe/portal/route.ts` — Customer billing portal
+- `src/app/api/stripe/success/route.ts` — Post-checkout redirect
+- `src/app/pricing/page.tsx` — Pricing page
+- `src/app/dashboard/subscription-actions.ts` — Server actions for subscription queries
+- `supabase/migrations/002_subscriptions.sql` — Subscriptions table + RLS
+
+**Files modified:**
+- `src/app/dashboard/page.tsx` — Added subscription status banner + manage billing
+- `src/app/persona/[id]/page.tsx` — Added paid unlock + pricing CTA
+- `.env.example` — Added Stripe env vars
